@@ -34,7 +34,7 @@ aside{width:244px;flex:none;position:fixed;top:0;bottom:0;left:0;background:var(
 .live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);margin-right:6px;animation:pulse 1.8s infinite}
 @keyframes pulse{50%{opacity:.35}}
 .main{flex:1;margin-left:244px;min-width:0;display:flex;flex-direction:column}
-header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:12px 24px;background:var(--side);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
+header{position:relative;display:flex;align-items:center;gap:14px;padding:12px 24px;background:var(--side);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
 .hbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--bd);background:var(--card);cursor:pointer;display:grid;place-items:center;position:relative;transition:.2s;flex:none}
 .hbtn:hover{background:var(--card2);transform:translateY(-2px)}
 #menuBtn{display:none}
@@ -175,26 +175,47 @@ tr.sel td{background:rgba(34,211,238,.1)}
 .lg{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}.lg .box{width:min(400px,100%);padding:22px}.sdot{width:12px;height:12px;border-radius:50%;background:var(--muted);display:inline-block;flex:none;margin:0 2px}.sdot.ok{background:#22c55e}.sdot.busy{background:#f59e0b;animation:pulse 1s infinite}.sdot.off{background:#94a3b8}.sdot.bad{background:#ef4444}@keyframes pulse{50%{opacity:.3}}
 .logo.has{background:#fff;padding:3px;box-shadow:none}.logo img{width:100%;height:100%;object-fit:contain;border-radius:9px}#printArea img.plogo{height:48px;max-width:180px;object-fit:contain;float:right}
 .uin{display:flex;gap:6px}.uin input{flex:1;min-width:0}.uin select{width:84px;flex:none}
+
+.hwrap{position:sticky;top:0;z-index:30;background:var(--side);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
+.hwrap header{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom:0}
+.brand{justify-content:center;padding:6px 4px 20px}
+.brand .logo{width:64px;height:64px;border-radius:16px;font-size:28px}
+.brand .logo.has{width:auto;max-width:100%;min-width:64px;height:68px;padding:4px 8px}
+.brand .logo.has img{width:auto;max-width:100%;height:100%}
+.hlogo{display:none}.hlogo.has{display:block;flex:none}.hlogo img{height:42px;max-width:150px;width:auto;object-fit:contain;background:#fff;border-radius:9px;padding:3px;display:block}
+.tstrip{display:none}
+@media(max-width:900px){
+ .tstrip{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 10px 8px}
+ .tstrip::-webkit-scrollbar{display:none}
+ .tstrip button{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 13px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--muted);font:600 13px/1 inherit;font-family:inherit;white-space:nowrap}
+ .tstrip button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+ .hlogo img{height:36px;max-width:96px}
+}
+@media(max-width:900px){.htitle h1{white-space:normal!important;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;font-size:15px}.htitle .co{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside id="side">
-    <div class="brand"><div class="logo"><i class="fa-solid fa-bolt"></i></div><div><b>EMDS</b><small>Energy Management</small></div></div>
+    <div class="brand"><div class="logo"><i class="fa-solid fa-bolt"></i></div></div>
     <nav class="nav" id="nav"></nav>
     <div class="sidefoot"><span class="live"></span>System online<br><small id="storeInfo"></small></div>
   </aside>
   <div id="bd" onclick="toggleMenu(false)"></div>
   <div class="main">
+    <div class="hwrap">
     <header>
       <button class="hbtn" id="menuBtn" onclick="toggleMenu()" aria-label="Menu" title="Open / close the menu"><i class="fa-solid fa-bars"></i></button>
-      <div class="htitle"><div class="co" id="coName"></div><h1>Electrical Energy &amp; Diesel Management System</h1></div>
+      <div class="hlogo" id="hLogo"></div>
+      <div class="htitle"><div class="co" id="coName"></div><h1 id="appTitle">Electrical Energy &amp; Diesel Management System</h1></div>
       <div class="clock hide-m"><b id="clkT"></b><span id="clkD"></span></div>
       <span class="sdot" id="syncDot" style="display:none" title="Cloud sync"></span>
       <button class="hbtn" onclick="togglePop(event)" aria-label="Notifications" title="Alerts and notifications"><i class="fa-regular fa-bell"></i><span class="badge" id="bell" style="display:none">0</span></button>
       <button class="hbtn" onclick="toggleTheme()" aria-label="Theme" title="Switch light / dark theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
       <div class="prof" onclick="go('settings')"><div class="av" id="avt">P</div><div><b id="uName"></b><br><small id="uRole"></small></div></div>
     </header>
+    <nav class="tstrip" id="tstrip" aria-label="All pages"></nav>
+    </div>
     <main id="view"></main>
   </div>
 </div>
@@ -232,7 +253,7 @@ const uniq=a=>[...new Set(a)].sort((x,y)=>String(x).localeCompare(String(y)));
 const normShift=v=>{const s=String(v||'').trim().toUpperCase().replace(/^SHIFT\s*/,'')[0];return SHIFTS.includes(s)?s:'A'};
 
 /* ============ data ============ */
-function emptyDB(){return{v:5,settings:{company:'Your Plant / Company Name',loc:'',user:'Plant Admin',role:'Energy Manager',cur:'₹',prodUnit:'Tonnes',tariff:8.5,dieselRate:92,co2e:0.82,co2d:2.68},plants:[],equip:[],energy:[],diesel:[],prod:[],stock:{opening:0,date:'',reorder:0,capacity:0},dieselRecv:[],dieselAdj:[],dieselDips:[],mtargets:{},areas:[],etypes:[],rates:{e:[],d:[]},bills:[],mreads:[],meter:null,tariff:null,sample:false}}
+function emptyDB(){return{v:5,settings:{company:'Your Plant / Company Name',loc:'',user:'Plant Admin',role:'Energy Manager',cur:'₹',prodUnit:'Tonnes',tariff:8.5,dieselRate:92,co2e:0.82,co2d:2.68},plants:[],equip:[],energy:[],diesel:[],prod:[],stock:{opening:0,date:'',reorder:0,capacity:0},dieselRecv:[],dieselAdj:[],dieselDips:[],mtargets:{},areas:[],etypes:[],rates:{e:[],d:[]},bills:[],mreads:[],ptot:[],meter:null,tariff:null,sample:false}}
 const BASE_ET=['DG Set','Transformer','Motor','Pump','Compressor','Boiler','Furnace','HVAC','Chiller','Other'];const ETYPES=[...BASE_ET];
 const DG_BENCH=3.5;
 const LEG={'Heater':'Other','Vehicle':'Other','Conveyor':'Motor','Welding':'Other','CNC Machine':'Motor','Grinder':'Motor','Press':'Motor','Cooling':'Other','General':'Other'};
@@ -242,7 +263,7 @@ const LEG={'Heater':'Other','Vehicle':'Other','Conveyor':'Motor','Welding':'Othe
    or implement the same 3 methods: pull(), push(db), test(). */
 const LS='emds_v1',LS_CFG='emds_backend';
 const SCHEMA={version:5,
-  collections:{plants:'Plant master',equip:'Equipment master',energy:'Energy readings',diesel:'Diesel readings',prod:'Production',dieselRecv:'Diesel receipts',dieselAdj:'Diesel adjustments',dieselDips:'Dip readings',bills:'Electricity bills',mreads:'Incomer meter readings',areas:'Areas',etypes:'Custom equipment types'},
+  collections:{plants:'Plant master',equip:'Equipment master',energy:'Energy readings',diesel:'Diesel readings',prod:'Production',dieselRecv:'Diesel receipts',dieselAdj:'Diesel adjustments',dieselDips:'Dip readings',bills:'Electricity bills',mreads:'Incomer meter readings',ptot:'Plant total (main meter)',areas:'Areas',etypes:'Custom equipment types'},
   documents:{settings:'Company, tariff and defaults',stock:'Diesel stock setup',mtargets:'Monthly targets',rates:'Dated energy / diesel rates'}};
 const LocalAdapter={
   name:'Browser LocalStorage',
@@ -380,7 +401,7 @@ function seedDB(){
   db.sample=true;['plants','equip','energy','diesel','prod','dieselRecv','dieselAdj','dieselDips'].forEach(k=>db[k].forEach(x=>{x.s=1}));db.rates.e.concat(db.rates.d).forEach(x=>{x.s=1});db.stock.s=1;
   return db;
 }
-const eqMap=()=>Object.fromEntries(DB.equip.map(e=>[e.id,e]));
+const eqMap=()=>{const m=Object.fromEntries(DB.equip.map(e=>[e.id,e]));(DB.plants||[]).forEach(p=>{m['__o_'+p.id]={id:'__o_'+p.id,plant:p.id,name:'Other / unmetered load',code:'-',type:'electrical',area:'General',etype:'Other',kw:0,virtual:1}});return m};
 const plMap=()=>Object.fromEntries(DB.plants.map(p=>[p.id,p]));
 let EQM=eqMap();
 
@@ -439,8 +460,12 @@ function filterBar(){const o=fOpts(DF);
   <span class="fnote">${hasEq()?'Production is recorded per plant &amp; shift. With Area / Type / Equipment filters, production and SEC use only plants that have matching consumption. ':''}${isPartial()?'Plant targets are for the whole plant, so they are hidden while shift/equipment filters are active.':''}</span></div></details>`}
 
 /* ============ aggregation ============ */
+/* Plant total (main meter) = real plant consumption. Equipment kWh is the breakdown; the rest is "Other / unmetered load". */
+function ptotRows(r){return (DB.ptot||[]).filter(x=>x.date>=r.f&&x.date<=r.to&&(!F.plant||x.plant===F.plant)&&DB.plants.some(p=>p.id===x.plant))}
+function withPtot(r,list){if(hasEq()||F.shift||!(DB.ptot&&DB.ptot.length))return list;const sum={};list.forEach(x=>{const k=x.plant+'|'+x.date;sum[k]=(sum[k]||0)+x.kwh});
+  const add=[];ptotRows(r).forEach(x=>{const o=+(x.kwh-(sum[x.plant+'|'+x.date]||0)).toFixed(3);if(o>0)add.push({id:'v|'+x.id,date:x.date,plant:x.plant,equip:'__o_'+x.plant,shift:'D',kwh:o,hours:0,rate:rateOn('e',x.date),virtual:1})});return add.length?list.concat(add):list}
 function agg(r){
-  const inD=x=>x.date>=r.f&&x.date<=r.to,E=DB.energy.filter(x=>inD(x)&&scopeOK(x)),D=DB.diesel.filter(x=>inD(x)&&scopeOK(x)),P=DB.prod.filter(x=>inD(x)&&prodOK(x));
+  const inD=x=>x.date>=r.f&&x.date<=r.to,E=withPtot(r,DB.energy.filter(x=>inD(x)&&scopeOK(x))),D=DB.diesel.filter(x=>inD(x)&&scopeOK(x)),P=DB.prod.filter(x=>inD(x)&&prodOK(x));
   const days=dates(r.f,r.to),partial=isPartial(),eqF=hasEq();
   const a={days,E,D,P,partial,kwh:0,litres:0,ecost:0,dcost:0,dgL:0,dgK:0,secK:0,secP:0,secL:0,secT:0,secTP:0,prodTot:0,dKwh:{},dEc:{},dL:{},dC:{},plant:{},eq:{},dq:{},pd:{},prodD:{},shift:{},area:{}};
   SHIFTS.forEach(s=>a.shift[s]={kwh:0,l:0});
@@ -512,20 +537,23 @@ function computeAlerts(f,to,useF=true){
         if(!ok)add(x.date,'warning','meter',x.plant,id,'Missing meter reading',`No meter start/end recorded ${shTag(x)} although this equipment is metered`);
         else if(prevEnd!==null&&Math.abs(x.meterStart-prevEnd)>1){const dlt=x.meterStart-prevEnd;add(x.date,dlt<0?'critical':'warning','meter',x.plant,id,dlt<0?'Meter rollback':'Meter gap',dlt<0?`Meter start ${fmt(x.meterStart)} is below the previous end ${fmt(prevEnd)}`:`Meter start ${fmt(x.meterStart)} is ${fmt(dlt)} above the previous end ${fmt(prevEnd)} — unrecorded consumption`)}}
       if(ok)prevEnd=x.meterEnd})}
+  /* plant main meter vs equipment total */
+  (DB.ptot||[]).forEach(x=>{if(!inD(x)||(useF&&!scopeOK({...x,shift:x.shift||'A'})))return;const eq=DB.energy.filter(e=>e.plant===x.plant&&e.date===x.date).reduce((a,e)=>a+e.kwh,0);if(eq>x.kwh*1.005&&eq>0)add(x.date,'warning','meter',x.plant,'','Equipment total above plant meter',`Equipment total ${fmt(eq)} kWh is more than the plant total ${fmt(x.kwh)} kWh - check the readings`)});
   out.sort((a,b)=>b.date.localeCompare(a.date)||(a.sev==='critical'?-1:1)-(b.sev==='critical'?-1:1));return out}
 
 /* ============ UI shell ============ */
-const NAV=[['dash','fa-gauge-high','Dashboard','Plant overview, KPIs, charts and alerts','Monitor'],['trends','fa-bolt','Energy','Energy trends: daily, weekly, monthly, yearly'],['diesel','fa-gas-pump','Diesel','Diesel stock, receipts and DG performance'],['plants','fa-industry','Plants','Plant-wise analysis with drill-down'],['equip','fa-microchip','Equipment','Equipment analysis and register'],['entry','fa-pen-to-square','Data Entry','Add or edit energy and diesel readings','Data'],['data','fa-table','Energy Data','Search, filter, edit and export every record'],['import','fa-file-import','Excel Import','Import XLSX / CSV files with validation'],['cost','fa-indian-rupee-sign','Cost Analysis','Electricity and diesel cost analysis','Analysis'],['kpi','fa-ranking-star','Performance KPIs','Energy performance indicators with custom limits'],['targets','fa-bullseye','Targets','Target vs actual, monthly targets'],['alerts','fa-triangle-exclamation','Alerts','Abnormal consumption and exceptions'],['meter','fa-gauge-high','Incomer Meter & Bill','CT/PT meter readings and DGVCL bill calculation'],['bills','fa-file-invoice','Electricity Bill','Compare the DISCOM bill with meter readings'],['formulas','fa-square-root-variable','Formulas','All calculation formulas with a live check'],['reports','fa-file-export','Reports','Report Center: preview, Excel, PDF, print','Manage'],['master','fa-database','Master Data','Plants, areas, equipment, types, rates, units, targets'],['backup','fa-shield-halved','Data Backup','Backup, restore and clear data'],['help','fa-circle-question','Help and Guide','How to use — with Gujarati voice'],['settings','fa-gear','Settings','Company profile and preferences']];
+const NAV=[['dash','fa-gauge-high','Dashboard','Plant overview, KPIs, charts and alerts','Monitor'],['trends','fa-bolt','Energy','Energy trends: daily, weekly, monthly, yearly'],['diesel','fa-gas-pump','Diesel','Diesel stock, receipts and DG performance'],['plants','fa-industry','Plants','Plant-wise analysis with drill-down'],['equip','fa-microchip','Equipment','Equipment analysis and register'],['entry','fa-pen-to-square','Data Entry','Add or edit energy and diesel readings','Data'],['ptotal','fa-plug-circle-bolt','Plant Total','Plant main-meter kWh (separate from equipment)'],['data','fa-table','Energy Data','Search, filter, edit and export every record'],['import','fa-file-import','Excel Import','Import XLSX / CSV files with validation'],['cost','fa-indian-rupee-sign','Cost Analysis','Electricity and diesel cost analysis','Analysis'],['kpi','fa-ranking-star','Performance KPIs','Energy performance indicators with custom limits'],['targets','fa-bullseye','Targets','Target vs actual, monthly targets'],['alerts','fa-triangle-exclamation','Alerts','Abnormal consumption and exceptions'],['meter','fa-gauge-high','Incomer Meter & Bill','CT/PT meter readings and DGVCL bill calculation'],['bills','fa-file-invoice','Electricity Bill','Compare the DISCOM bill with meter readings'],['formulas','fa-square-root-variable','Formulas','All calculation formulas with a live check'],['reports','fa-file-export','Reports','Report Center: preview, Excel, PDF, print','Manage'],['master','fa-database','Master Data','Plants, areas, equipment, types, rates, units, targets'],['backup','fa-shield-halved','Data Backup','Backup, restore and clear data'],['help','fa-circle-question','Help and Guide','How to use — with Gujarati voice'],['settings','fa-gear','Settings','Company profile and preferences']];
 const BN=[['dash','fa-gauge-high','Home'],['entry','fa-pen-to-square','Entry'],['diesel','fa-gas-pump','Diesel'],['alerts','fa-triangle-exclamation','Alerts'],['menu','fa-bars','More']];
 function buildNav(){
   $('#nav').innerHTML=NAV.map(([k,i,l,t,g])=>`${g?`<div class="ng">${g}</div>`:''}<button class="${S.view===k||(S.view==='eqd'&&k==='equip')?'on':''}" onclick="go('${k}')" title="${esc(t||l)}"><i class="fa-solid ${i}"></i>${l}</button>`).join('');
+  const ts=$('#tstrip');if(ts){ts.innerHTML=NAV.map(([k,i,l])=>`<button class="${S.view===k||(S.view==='eqd'&&k==='equip')?'on':''}" onclick="go('${k}')"><i class="fa-solid ${i}"></i>${l}</button>`).join('');const on=ts.querySelector('.on');if(on)ts.scrollLeft=on.offsetLeft-(ts.clientWidth-on.offsetWidth)/2}
   $('#bnav').innerHTML=BN.map(([k,i,l])=>`<button class="${S.view===k?'on':''}" onclick="${k==='menu'?'toggleMenu(true)':`go('${k}')`}"><i class="fa-solid ${i}"></i>${l}${k==='alerts'?'<span class="badge" id="bell2" style="display:none"></span>':''}</button>`).join('')}
 function toggleMenu(f){if(innerWidth>900){const o=f===undefined?!document.body.classList.contains('nosb'):!f;document.body.classList.toggle('nosb',o);try{localStorage.setItem('emds_nosb',o?'1':'')}catch(e){}return}const o=f===undefined?!$('#side').classList.contains('open'):f;$('#side').classList.toggle('open',o);$('#bd').classList.toggle('open',o);document.body.classList.toggle('menu-open',!!o)}
 try{if(localStorage.getItem('emds_nosb')&&innerWidth>900)document.body.classList.add('nosb')}catch(e){}
 function go(v){if(Cloud.on()&&Cloud.role()==='viewer'&&['entry','import','master'].includes(v)){toast('This is a view-only account','warn');return}if(v!=='help')helpStop();if(v!==S.view)S.drill='';S.view=v;toggleMenu(false);$('#pop').classList.remove('show');render();window.scrollTo(0,0)}
 function toggleTheme(){const n=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem('emds_theme',n)}catch(e){}render()}
 function tick(){const n=new Date();$('#clkT').textContent=n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});$('#clkD').textContent=n.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})}
-function header(){const s=DB.settings;$('#coName').textContent=s.company+(s.loc?' • '+s.loc:'');const bl=$('.brand .logo');if(bl&&bl.classList){bl.innerHTML=s.logo?`<img alt="" src="${s.logo}">`:'<i class="fa-solid fa-bolt"></i>';bl.classList.toggle('has',!!s.logo)}
+function header(){const s=DB.settings;$('#coName').textContent=s.company+(s.loc?' • '+s.loc:'');const at=$('#appTitle');if(at)at.textContent=s.appName||'Electrical Energy & Diesel Management System';document.title=(s.appName||'Electrical Energy & Diesel Management System');const hl=$('#hLogo');if(hl){hl.innerHTML=s.logo?`<img alt="" src="${s.logo}">`:'';hl.classList.toggle('has',!!s.logo)}const bl=$('.brand .logo');if(bl&&bl.classList){bl.innerHTML=s.logo?`<img alt="" src="${s.logo}">`:'<i class="fa-solid fa-bolt"></i>';bl.classList.toggle('has',!!s.logo)}
   const un=Cloud.auth&&Cloud.auth.name||s.user;$('#uName').textContent=un;$('#uRole').textContent=Cloud.auth&&Cloud.auth.role?Cloud.auth.role:s.role;$('#avt').textContent=(un||'U')[0].toUpperCase();
   const t=today(),al=computeAlerts(addDays(t,-6),t,false).length;['#bell','#bell2'].forEach(q=>{const e=$(q);if(e){e.style.display=al?'grid':'none';e.textContent=al>99?'99+':al}});
   const kb=((JSON.stringify(DB).length)/1024).toFixed(0);$('#storeInfo').textContent=`${DB.energy.length+DB.diesel.length} records • ${kb} KB`}
@@ -1059,6 +1087,7 @@ function filterText(){const PL=plMap(),o=[];if(F.plant)o.push('Plant: '+(PL[F.pl
 function exportXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
   const r=getRange(),a=agg(r),PL=plMap(),wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),P=pu();
   add('Summary',[['Plant','Energy kWh','Target kWh','Variance %','Diesel L','Production '+P.n,'SEC '+secU(),'Electricity Cost','Diesel Cost','Total Cost','Variance kWh'],...summaryRows(a),[],['Filters',filterText()],['Period',r.f+' to '+r.to],['Overall SEC',+a.sec.toFixed(2)],['Diesel specific (L/'+P.p+')',+a.dsc.toFixed(3)],['Overall efficiency %',+a.eff.toFixed(1)]]);
+  add('Plant Totals',[['Date','Plant','Plant total kWh','Meter start','Meter end','Remarks'],...(DB.ptot||[]).map(x=>[x.date,PL[x.plant]?.name,x.kwh,x.mS??'',x.mE??'',x.remarks||''])]);
   add('Energy',[['Date','Shift','Plant','Area','Type','Equipment','Meter Start','Meter End','kWh','Hours','Rate','Cost','Remarks'],...a.E.map(x=>[x.date,shDisp(x.shift),PL[x.plant]?.name,EQM[x.equip]?.area,EQM[x.equip]?.etype,EQM[x.equip]?.name,x.meterStart??'',x.meterEnd??'',x.kwh,x.hours,x.rate||DB.settings.tariff,Math.round(x.kwh*(x.rate||DB.settings.tariff)),x.remarks||''])]);
   add('Diesel',[['Date','Shift','Plant','Area','Type','Equipment','Diesel Start','Diesel End','Litres','Rate','Cost','Hours','kWh Generated','Remarks'],...a.D.map(x=>[x.date,shDisp(x.shift),PL[x.plant]?.name,EQM[x.equip]?.area,EQM[x.equip]?.etype,EQM[x.equip]?.name,x.dStart??'',x.dEnd??'',x.litres,x.rate,Math.round(x.litres*(x.rate||DB.settings.dieselRate)),x.hours,x.kwhGen,x.remarks||''])]);
   add('Production',[['Date','Shift','Plant','Tons'],...a.P.map(x=>[x.date,shDisp(x.shift),PL[x.plant]?.name,x.tons])]);
@@ -1098,6 +1127,7 @@ function renderSettings(){const s=DB.settings;
   return pageTitle('Settings','Profile, plant identity and data management')+
   `<div class="grid g2"><div class="glass card"><h3><i class="fa-solid fa-id-badge"></i>Profile &amp; Plant</h3><form class="form" onsubmit="saveProfile(event)" style="grid-template-columns:1fr">
    <div><label>Company logo</label><div class="phb">${s.logo?`<img src="${s.logo}" alt="Logo" style="max-width:150px;max-height:70px;object-fit:contain;background:#fff;border-radius:8px;padding:4px">`:'<span style="color:var(--muted);font-size:13px">No logo yet</span>'}<button type="button" class="btn sm sec" onclick="logoPick()"><i class="fa-solid fa-image"></i>${s.logo?'Change':'Upload logo'}</button>${s.logo?'<button type="button" class="btn sm red" onclick="logoDel()"><i class="fa-solid fa-trash"></i>Remove</button>':''}<input type="file" id="logoFile" accept="image/*" hidden onchange="logoLoad(this)"></div></div>
+   <div><label>Dashboard name (shown at the top)</label><input name="appName" maxlength="80" placeholder="Electrical Energy &amp; Diesel Management System" value="${esc(s.appName||'')}"></div>
    <div><label>Company / Plant name</label><input name="company" value="${esc(s.company)}"></div><div><label>Location</label><input name="loc" value="${esc(s.loc)}"></div>
    <div><label>User name</label><input name="user" value="${esc(s.user)}"></div><div><label>Role</label><input name="role" value="${esc(s.role)}"></div>
    <div><label>Currency symbol</label><input name="cur" value="${esc(s.cur)}" maxlength="4"></div>
@@ -1106,7 +1136,7 @@ function renderSettings(){const s=DB.settings;
    <div><button class="btn grn"><i class="fa-solid fa-floppy-disk"></i>Save</button></div></form></div>
   <div class="glass card"><h3><i class="fa-solid fa-database"></i>Data Management</h3><p style="color:var(--muted);margin-bottom:14px;font-size:13px">Data is stored in this browser (LocalStorage). Take regular backups — clearing browser data erases it.</p><div class="acts"><button class="btn" onclick="go('backup')"><i class="fa-solid fa-shield-halved"></i>Open Data Backup</button><button class="btn sec" onclick="exportJSON()"><i class="fa-solid fa-download"></i>Quick JSON Backup</button>${DB.sample?'<button class="btn amb" onclick="deleteSample()" title="Remove the sample plants, equipment and records"><i class="fa-solid fa-flask"></i>Delete sample data</button>':''}<button class="btn" onclick="loadDemo()" title="Replace everything with fresh sample data"><i class="fa-solid fa-wand-magic-sparkles"></i>Load sample data</button><button class="btn red" onclick="clearAll()"><i class="fa-solid fa-trash"></i>Clear all data</button></div></div></div>
   <div style="margin-top:14px">${cloudCardHtml()}</div><div style="margin-top:14px">${renderStorageCard()}</div>`}
-function saveProfile(ev){ev.preventDefault();const f=ev.target.elements,s=DB.settings;['company','loc','user','role','cur','prodUnit','entryMode'].forEach(k=>s[k]=f[k].value.trim());save();toast('Settings saved');render()}
+function saveProfile(ev){ev.preventDefault();const f=ev.target.elements,s=DB.settings;['appName','company','loc','user','role','cur','prodUnit','entryMode'].forEach(k=>s[k]=f[k].value.trim());save();toast('Settings saved');render()}
 
 /* ============ plant-wise analysis ============ */
 let LASTA=null;
@@ -1372,6 +1402,7 @@ function impCommit(){
       else{DB.energy.push({id:uid(),date:v.date,plant:pl.id,equip:eq.id,shift:v.shift,kwh:v.kwh,hours:v.hours||0,rate:v.eRate>0?v.eRate:rateOn('e',v.date),...m,remarks:v.remarks});stats.energy++}
       if(v.prod!==null){upsertProd(v.date,pl.id,v.shift,v.prod);stats.prod++}
       if(v.date<stats.min)stats.min=v.date;if(v.date>stats.max)stats.max=v.date});
+    if(I.ptot&&I.ptot.length)stats.pt=ptCommitList(I.ptot);
     if(!save())throw new Error('browser storage is full');
   }catch(err){DB=JSON.parse(snap);EQM=eqMap();toast('Import cancelled: '+err.message+'. No data was changed.','err');return}
   S.impDone={...stats,skipDup:plan.skipDup,err:I.sum.err,file:I.name};S.imp=null;toast(`Import completed: ${stats.energy+stats.diesel} record(s) imported`+(plan.skipDup+I.sum.err?`, ${plan.skipDup+I.sum.err} skipped`:''),plan.skipDup+I.sum.err?'warn':'ok');render()}
@@ -1394,15 +1425,93 @@ function exportTemplate(kind){
 
 function renderImport(){
   return pageTitle('Excel Import','Upload .xlsx, .xls or .csv • columns are mapped automatically • review before anything is saved',`<button class="btn sec" onclick="exportTemplate('xlsx')"><i class="fa-solid fa-file-excel"></i>Export Template</button><button class="btn sec hide-m" onclick="exportTemplate('csv')"><i class="fa-solid fa-file-csv"></i>CSV Template</button>`)+
+  `<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-table-cells"></i>Daily grid — easiest way<span class="r"><span class="chip g">Date × Equipment</span></span></h3>
+    <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:10px">Write plant and equipment names <b>once</b> at the top. After that, only type the <b>date</b> and one number per equipment per day. Hours, diesel and production have their own sheets in the same file. Plant energy is added up automatically from its equipment.</p>
+    <div class="form" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div><label>Numbers in the kWh sheet are</label><select id="gmMode"><option value="kwh">Energy used that day (kWh)</option><option value="meter">Meter readings (app subtracts the previous reading)</option></select></div><div><label>Energy unit in the sheet</label><select id="gmUnit"><option value="1">kWh</option><option value="1000">MWh (app converts to kWh)</option></select></div></div>
+    <div class="acts" style="margin-top:10px"><button class="btn sec" onclick="gridTemplate()"><i class="fa-solid fa-file-excel"></i>Download grid template${DB.equip.length?' (with my plants &amp; equipment)':''}</button><button class="btn" onclick="document.getElementById('gridFile').click()"><i class="fa-solid fa-file-import"></i>Import grid file</button><input type="file" id="gridFile" accept=".xlsx,.xls,.csv" hidden onchange="gridPick(this)"></div></div>`+
   `<div class="glass drop" id="drop" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="impDrop(event)" onclick="document.getElementById('impFile').click()">
     <i class="fa-solid fa-cloud-arrow-up"></i><b><span class="hide-t">Drag &amp; drop your file here</span><span class="show-t">Tap to choose your file</span></b><span><span class="hide-t">or click to browse</span><span class="show-t">from Files, Drive or downloads</span> — XLSX, XLS or CSV (max 8 MB)</span>
     <input type="file" id="impFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/comma-separated-values,application/csv" hidden onchange="impPick(this)" onclick="event.stopPropagation()"></div><div id="impWrap"></div>`}
 
+/* ============ Plant total (main meter) ============ */
+function renderPtot(){const E=(DB.ptot||[]).find(x=>x.id===S.ptEdit)||{},PL=plMap(),pls=DB.plants;
+  const rows=[...(DB.ptot||[])].sort((a,b)=>b.date.localeCompare(a.date)||String(a.plant).localeCompare(String(b.plant))).slice(0,120).map(x=>{const eq=DB.energy.filter(e=>e.plant===x.plant&&e.date===x.date).reduce((a,e)=>a+e.kwh,0),o=x.kwh-eq;
+    return`<tr><td><b>${x.date}</b></td><td>${esc(PL[x.plant]?PL[x.plant].name:'-')}</td><td class="n">${fmt(x.kwh,0)}</td><td class="n">${fmt(eq,0)}</td><td class="n" style="${o<0?'color:var(--red)':''}">${fmt(o,0)}</td><td class="n">${x.kwh>0?(o/x.kwh*100).toFixed(1)+'%':'-'}</td><td class="n"><button class="btn sm sec" onclick="ptEdit('${x.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button> <button class="btn sm red" onclick="ptDel('${x.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button></td></tr>`}).join('');
+  return pageTitle('Plant Total (main meter)','Total kWh used by the whole plant • equipment kWh is entered separately • the rest is shown as "Other / unmetered load"')+
+  `<div class="sbn" style="margin-bottom:14px"><i class="fa-solid fa-circle-info"></i><div>The <b>plant total</b> is the real plant consumption. Equipment kWh shows where it went. <b>Other / unmetered load</b> = plant total − equipment total, so dashboard, cost and SEC always follow the plant meter.</div></div>
+  <div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-${E.id?'pen-to-square':'circle-plus'}"></i>${E.id?'Edit plant total':'Add plant total'}</h3><form class="form" id="ptForm" onsubmit="ptSave(event)" oninput="ptCalc()">
+    <div><label>Date *</label><input name="date" type="date" required max="${today()}" value="${esc(E.date||today())}"></div>
+    <div><label>Plant *</label><select name="plant" required>${pls.map(p=>`<option value="${p.id}" ${(E.plant||S.lastPlant)===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+    <div><label>Meter start (kWh)</label><input name="mS" type="number" step="any" min="0" inputmode="decimal" value="${E.mS==null?'':esc(E.mS)}"></div>
+    <div><label>Meter end (kWh)</label><input name="mE" type="number" step="any" min="0" inputmode="decimal" value="${E.mE==null?'':esc(E.mE)}"></div>
+    <div><label>Plant total kWh *</label><input name="kwh" type="number" step="any" min="0" inputmode="decimal" required value="${E.kwh==null?'':esc(E.kwh)}"><small class="hint">= Meter end − Meter start, or type it directly</small></div>
+    <div><label>Remarks</label><input name="remarks" maxlength="200" value="${esc(E.remarks||'')}"></div>
+    <div id="ptPrev" style="grid-column:1/-1;font-size:13px;color:var(--muted)"></div>
+    <div class="acts" style="grid-column:1/-1"><button class="btn grn"><i class="fa-solid fa-floppy-disk"></i>${E.id?'Save changes':'Add plant total'}</button>${E.id?'<button type="button" class="btn sec" onclick="S.ptEdit=\'\';render()">Cancel</button>':''}</div></form></div>
+  <div class="glass card"><h3><i class="fa-solid fa-scale-balanced"></i>Plant total vs equipment total<span class="r">${(DB.ptot||[]).length} records</span></h3>${rows?`<div class="tw"><table><thead><tr><th>Date</th><th>Plant</th><th class="n">Plant total kWh</th><th class="n">Equipment total kWh</th><th class="n">Other / unmetered kWh</th><th class="n">Other %</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="empty"><i class="fa-solid fa-plug"></i>No plant totals yet. Add one above or use the Daily grid Excel import.</div>'}</div>`}
+function ptCalc(){const f=document.getElementById('ptForm');if(!f)return;const a=f.elements.mS.value,b=f.elements.mE.value;if(a!==''&&b!==''&&+b>=+a)f.elements.kwh.value=+(+b-+a).toFixed(3);
+  const k=+f.elements.kwh.value,pl=f.elements.plant.value,d=f.elements.date.value,eq=DB.energy.filter(e=>e.plant===pl&&e.date===d).reduce((x,e)=>x+e.kwh,0),el=document.getElementById('ptPrev');
+  if(el)el.innerHTML=k>0?`Equipment total for this day: <b>${fmt(eq,0)} kWh</b> • Other / unmetered: <b style="${k-eq<0?'color:var(--red)':''}">${fmt(k-eq,0)} kWh</b>${k<eq?' — equipment total is higher than the plant total, check the readings':''}`:''}
+function ptSave(ev){ev.preventDefault();const f=ev.target.elements,n=k=>f[k].value.trim()===''?null:Number(f[k].value),date=f.date.value,plant=f.plant.value,kwh=n('kwh'),mS=n('mS'),mE=n('mE');
+  if(!date||date>today()){toast('Enter a valid date (not in the future)','err');return}if(!plant){toast('Select a plant','err');return}if(kwh===null||!(kwh>=0)){toast('Enter the plant total kWh','err');return}
+  if((mS===null)!==(mE===null)){toast('Enter both meter readings, or leave both blank','err');return}if(mS!==null&&mE<mS){toast('Meter end cannot be less than meter start','err');return}
+  const dupe=(DB.ptot||[]).find(x=>x.plant===plant&&x.date===date&&x.id!==S.ptEdit);if(dupe){toast('A plant total for this plant and date already exists - edit it instead','err');return}
+  const rec={date,plant,kwh,mS,mE,remarks:f.remarks.value.trim()};S.lastPlant=plant;
+  if(S.ptEdit){Object.assign(DB.ptot.find(x=>x.id===S.ptEdit),rec);S.ptEdit=''}else DB.ptot.push({id:uid(),...rec});save();toast('Plant total saved');render()}
+function ptEdit(id){S.ptEdit=id;render();window.scrollTo(0,0)}
+function ptDel(id){ask('Delete this plant total?','The plant total will be permanently deleted.','Delete',()=>{DB.ptot=DB.ptot.filter(x=>x.id!==id);if(S.ptEdit===id)S.ptEdit='';save();toast('Deleted');render()})}
+function ptLast(pid){let b=null,k='';(DB.ptot||[]).forEach(x=>{if(x.plant===pid&&x.mE!=null&&x.date>=k){k=x.date;b=x.mE}});return b}
+/* ---- daily grid (Date x Equipment) ---- */
+const GRID_SH={eq:'Equipment kWh',hr:'Running Hours',dl:'Diesel Litres',pr:'Plant Production',pt:'Plant Total kWh',in:'Instructions'};
+function gridTemplate(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  const PL=plMap(),eqs=DB.equip.filter(e=>PL[e.plant]).sort((a,b)=>(PL[a.plant].name+a.name).localeCompare(PL[b.plant].name+b.name)),n=Math.max(eqs.length,10),dim_=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate(),ym=today().slice(0,7);
+  const pr=[],er=[],tr=[];let lastP='';for(let j=0;j<n;j++){const e=eqs[j];const pn_=e?PL[e.plant].name:'';pr.push(e&&pn_!==lastP?pn_:'');if(e)lastP=pn_;er.push(e?e.name:'');tr.push(e?(e.etype||''):'')}
+  const dates=[];for(let d=1;d<=dim_;d++)dates.push(ym+'-'+String(d).padStart(2,'0'));
+  const mk_=(first,second,third,label,cell)=>[['Plant →',...first],['Equipment →',...second],['Type →',...third],[label,...Array(n).fill('')],...dates.map(d=>[d,...Array(n).fill(cell===undefined?'':cell)])];
+  const wb=XLSX.utils.book_new(),add=(name,aoa,w)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:14},...Array(n).fill({wch:w||16})];XLSX.utils.book_append_sheet(wb,ws,name)};
+  add(GRID_SH.eq,mk_(pr,er,tr,'Date ↓   (kWh or meter reading)'),18);add(GRID_SH.hr,mk_(pr,er,tr,'Date ↓   (running hours)'),16);add(GRID_SH.dl,mk_(pr,er,tr,'Date ↓   (diesel litres, DG sets only)'),16);
+  const pls=DB.plants.length?DB.plants.map(p=>p.name):['','',''];add(GRID_SH.pr,[['Plant →',...pls],['','',''],['','',''],['Date ↓   (production)',...pls.map(()=>'')],...dates.map(d=>[d,...pls.map(()=>'')])],16);
+  add(GRID_SH.pt,[['Plant →',...pls],['','',''],['','',''],['Date ↓   (plant main-meter kWh or reading)',...pls.map(()=>'')],...dates.map(d=>[d,...pls.map(()=>'')])],18);
+  add(GRID_SH.in,[['How to use this file'],['1. Sheet "Equipment kWh": row 1 = plant (write once; blank cell = same plant as the one on its left), row 2 = equipment name, row 3 = type (optional: DG Set, Furnace, Motor, Pump, Compressor, Boiler, Transformer, HVAC, Chiller, Other).'],['2. From row 5 down: Date in column A, then one number per equipment per day. Leave a cell empty if there is no reading that day.'],['3. Running Hours, Diesel Litres, Plant Production sheets: same column order as the Equipment kWh sheet (do not insert or move columns). Production: plant names in row 1.'],['4. Diesel Litres is only for DG sets. For a DG set the kWh sheet is "kWh generated".'],['5. App > Excel Import > Daily grid > choose what the kWh sheet contains (daily kWh or meter readings) and the unit, then Import grid file.'],['6. Sheet "Plant Total kWh": type the plant main-meter kWh (or meter reading) per plant per day. Equipment kWh is entered separately; Other / unmetered load = plant total - equipment total.']],110);
+  XLSX.writeFile(wb,'EMS_Daily_Grid_Template.xlsx');toast('Grid template downloaded')}
+function ptCommitList(list){let n=0;DB.ptot=DB.ptot||[];list.forEach(x=>{let pl=DB.plants.find(p=>p.name.toLowerCase()===x.plant.toLowerCase());if(!pl){pl={id:uid(),name:x.plant,base:0,tKWh:0,tDiesel:0,tSEC:0};DB.plants.push(pl)}
+    const o=DB.ptot.find(e=>e.plant===pl.id&&e.date===x.date),rec={date:x.date,plant:pl.id,kwh:x.kwh,mS:x.mS,mE:x.mE,remarks:o?o.remarks||'':''};if(o)Object.assign(o,rec);else DB.ptot.push({id:uid(),...rec});n++});return n}
+function gridPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  const ext=(f.name.split('.').pop()||'').toLowerCase();if(!['xlsx','xls'].includes(ext)){toast('Use the .xlsx grid file (CSV has only one sheet)','err');return}if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
+  const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');rd.onload=e=>{try{gridLoad(XLSX.read(e.target.result,{type:'array'}),f)}catch(err){toast('Could not read file: '+err.message,'err')}};rd.readAsArrayBuffer(f)}
+function gridLoad(wb,file){
+  const mode=(document.getElementById('gmMode')||{}).value==='meter'?'meter':'kwh',uf=Number((document.getElementById('gmUnit')||{}).value)===1000?1000:1;
+  const sh=re=>wb.SheetNames.find(n=>re.test(n)),A=n=>n?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''}):[];
+  const nEq=sh(/hour|diesel|litre|prod|instruction|total/i)?wb.SheetNames.find(n=>!/hour|diesel|litre|prod|instruction|total/i.test(n)):wb.SheetNames[0];
+  const E=A(nEq),Hh=A(sh(/hour/i)),Dl=A(sh(/diesel|litre/i)),Pr=A(sh(/prod/i)),Pt=A(sh(/total/i));
+  if(E.length<5){toast('Equipment sheet has no data rows (data starts at row 5)','err');return}
+  const cols=[];let lastP='';for(let j=1;j<(E[1]||[]).length;j++){const p=tx(E[0][j]),q=tx(E[1][j]);if(p)lastP=p;if(!q)continue;if(!lastP){toast('Column '+(j+1)+': plant name missing in row 1','err');return}cols.push({j,plant:lastP,equip:q,type:tx(E[2]&&E[2][j])})}
+  if(!cols.length){toast('No equipment names found in row 2 of the Equipment sheet','err');return}
+  const plC={};if(Pr.length){for(let j=1;j<(Pr[0]||[]).length;j++){const q=tx(Pr[0][j]);if(q)plC[q.toLowerCase()]=j}}
+  const ptC=[];if(Pt.length){for(let j=1;j<(Pt[0]||[]).length;j++){const q=tx(Pt[0][j]);if(q)ptC.push({j,plant:q})}}
+  const out=[IMP_COLS.slice()],pre={},prev={},ptPrev={},ptl=[],st={dates:0,skipDate:0,base:0,prodLost:0,ptBase:0};
+  const lm=(c)=>{const pl=DB.plants.find(p=>p.name.toLowerCase()===c.plant.toLowerCase()),eq=pl&&DB.equip.find(e=>e.plant===pl.id&&e.name.toLowerCase()===c.equip.toLowerCase());return eq?lastMeter(eq.id):null};
+  for(let r=3;r<Math.max(E.length,Pt.length);r++){const dc=[E,Pt,Pr,Hh,Dl].map(S_=>S_[r]&&S_[r][0]).find(x=>tx(x)!=='');if(dc===undefined)continue;const d=impDate(dc);if(d.e)continue;if(d.bad){if(!/^date/i.test(tx(dc)))st.skipDate++;continue}st.dates++;
+    const prodTaken=new Set(),num=(S_,c)=>{const x=S_&&S_[r]?S_[r][c.j]:'';const q=pn(x);return q.e||q.bad?null:q.v};
+    cols.forEach(c=>{const raw=num(E,c);if(raw===null)return;const val=+(raw*uf).toFixed(6),hrs=num(Hh,c),lit=num(Dl,c);let mS='',mE='',kwh='';
+      if(mode==='meter'){let pv=prev[c.j];if(pv===undefined)pv=lm(c);prev[c.j]=val;if(pv===null||pv===undefined){st.base++;return}mS=pv;mE=val}else kwh=val;
+      let prodV='';const pj=plC[c.plant.toLowerCase()];if(pj!==undefined&&!prodTaken.has(c.plant.toLowerCase())){const pr=Pr[r]?pn(Pr[r][pj]):{e:1};if(!pr.e&&!pr.bad){prodV=pr.v;prodTaken.add(c.plant.toLowerCase())}}
+      out.push([d.v,'',c.plant,'',c.equip,c.type,mS,mE,kwh,hrs===null?'':hrs,lit===null?'':lit,prodV,'','',''])});
+    ptC.forEach(c=>{const q=pn(Pt[r]?Pt[r][c.j]:'');if(q.e||q.bad)return;const val=+(q.v*uf).toFixed(6);
+      if(mode==='meter'){let pv=ptPrev[c.j];if(pv===undefined){const pl=DB.plants.find(p=>p.name.toLowerCase()===c.plant.toLowerCase());pv=pl?ptLast(pl.id):null}ptPrev[c.j]=val;if(pv===null||pv===undefined){st.ptBase++;return}if(val<pv){return}ptl.push({date:d.v,plant:c.plant,kwh:+(val-pv).toFixed(3),mS:pv,mE:val})}
+      else ptl.push({date:d.v,plant:c.plant,kwh:val,mS:null,mE:null})});
+    if(Pr[r])Object.entries(plC).forEach(([pk,pj])=>{const q=pn(Pr[r][pj]);if(!q.e&&!q.bad&&!prodTaken.has(pk))st.prodLost++})}
+  if(out.length<2&&!ptl.length){toast('No readings found. Check that dates are in column A from row 5 and numbers are filled.','err');return}
+  if(out.length<2){S.imp=null;ask('Import plant totals?',`<b>${ptl.length}</b> plant total(s) found. Existing totals for the same plant and date are replaced.`,'Import',()=>{const n=ptCommitList(ptl);if(!save()){toast('Browser storage is full','err');return}toast(n+' plant total(s) imported');render()},false);return}
+  const ws=XLSX.utils.aoa_to_sheet(out),nwb={SheetNames:['Data'],Sheets:{Data:ws}};
+  S.impDone=null;S.impPt=ptl;S.imp={name:file.name+' (daily grid)',size:file.size,wb:nwb,sheet:'Data',dup:'skip',defShift:entryMode()==='daily'?'D':'A',filter:'all',limit:100,map:{},headers:[],rows:[],hdrRow:0};impLoadSheet();S.imp.ptot=ptl;
+  const notes=[];if(ptl.length)notes.push(ptl.length+' plant total(s) will be imported together with the equipment records');if(st.base)notes.push(st.base+' first meter reading(s) used only as the starting point');if(st.skipDate)notes.push(st.skipDate+' row(s) with an invalid date skipped');if(st.prodLost)notes.push(st.prodLost+' production value(s) skipped (no equipment reading that day for that plant)');
+  toast(`${out.length-1} readings read from ${st.dates} date rows`+(notes.length?' — '+notes.join('; '):''),notes.length?'warn':'ok')}
 function impDraw(){
   const w=document.getElementById('impWrap');if(!w)return;
   const D=S.impDone,I=S.imp;
   if(D){w.innerHTML=`<div class="glass card" style="margin-top:14px;border-color:var(--green)"><h3><i class="fa-solid fa-circle-check" style="color:var(--green)"></i>Import complete — ${esc(D.file)}</h3>
-    <div class="mini"><div><b>${fmt(D.energy)}</b><span>Energy records</span></div><div><b>${fmt(D.diesel)}</b><span>Diesel records</span></div><div><b>${D.plants}</b><span>New plants</span></div><div><b>${D.equip}</b><span>New equipment</span></div><div><b>${D.over}</b><span>Overwritten</span></div><div><b>${D.skipDup}</b><span>Duplicates skipped</span></div><div><b>${D.err}</b><span>Invalid rows skipped</span></div></div>
+    <div class="mini"><div><b>${fmt(D.energy)}</b><span>Energy records</span></div><div><b>${fmt(D.diesel)}</b><span>Diesel records</span></div><div><b>${D.plants}</b><span>New plants</span></div><div><b>${D.equip}</b><span>New equipment</span></div><div><b>${D.over}</b><span>Overwritten</span></div><div><b>${D.pt||0}</b><span>Plant totals</span></div><div><b>${D.skipDup}</b><span>Duplicates skipped</span></div><div><b>${D.err}</b><span>Invalid rows skipped</span></div></div>
     <p style="color:var(--muted);margin:12px 0;font-size:13px">Saved to browser storage. KPIs, charts and tables now include this data (${D.min} → ${D.max}).</p>
     <div class="acts"><button class="btn" onclick="impViewDash()"><i class="fa-solid fa-gauge-high"></i>Open Dashboard for imported period</button><button class="btn sec" onclick="impViewData()"><i class="fa-solid fa-table"></i>View in Data Table</button><button class="btn sec" onclick="S.impDone=null;impDraw()"><i class="fa-solid fa-upload"></i>Import another file</button></div></div>`;return}
   if(!I){w.innerHTML='';return}
@@ -1847,7 +1956,7 @@ const BASE_ET_LIST=BASE_ET;
 const EQ_STATUS=['Active','Standby','Under Maintenance','Decommissioned'];
 const METER_TYPES=['Digital Energy Meter','Smart Meter (AMR/AMI)','Analog Energy Meter','CT-Operated Meter','Fuel Flow Meter','Tank Dip / Level','No Meter'];
 const eqStChip=s=>`<span class="chip ${{Active:'g',Standby:'b','Under Maintenance':'a',Decommissioned:'x'}[s||'Active']||'x'}">${esc(s||'Active')}</span>`;
-function ensureMaster(){DB.bills=DB.bills||[];DB.mreads=DB.mreads||[];DB.areas=DB.areas||[];DB.etypes=DB.etypes||[];DB.rates=DB.rates||{e:[],d:[]};DB.rates.e=DB.rates.e||[];DB.rates.d=DB.rates.d||[];
+function ensureMaster(){DB.ptot=DB.ptot||[];DB.bills=DB.bills||[];DB.mreads=DB.mreads||[];DB.areas=DB.areas||[];DB.etypes=DB.etypes||[];DB.rates=DB.rates||{e:[],d:[]};DB.rates.e=DB.rates.e||[];DB.rates.d=DB.rates.d||[];
   const want=[...BASE_ET,...DB.etypes.filter(t=>!BASE_ET.includes(t))];if(ETYPES.join('|')!==want.join('|')){ETYPES.length=0;ETYPES.push(...want)}
   [['e','tariff'],['d','dieselRate']].forEach(([k,s])=>{const L=DB.rates[k];if(L.length){const h=rateEntry(k,today());if(h)DB.settings[s]=h.rate}})}
 function rateEntry(k,date){const L=(DB.rates&&DB.rates[k])||[];if(!L.length)return null;let best=null,first=L[0];L.forEach(x=>{if(x.from<first.from)first=x;if(x.from<=date&&(!best||x.from>best.from))best=x});return best||first}
@@ -2113,6 +2222,12 @@ const HELP=[
 {ic:'fa-pen-to-square',rg:'Roj no data entry',gu:'રોજની ડેટા એન્ટ્રી',
  rs:['Menu ma "Data Entry" kholo. Tarikh, plant ane equipment pasand karo. Data 24 kalak pachhi levatu hoy to Settings ma "Data entry mode" Daily rakho, to shift puchhse nahi. Pachhi shift-wise data levo to Shift-wise karo.','Meter start ane meter end lakho. Energy kWh potani jate thai jase, etle meter end minus meter start. Meter end, start thi ochho hoy to app aagal nahi vadhva de.','Running hours lakho. Diesel vali machine hoy to diesel start ane end lakho; litres potani jate thase.','Jarur hoy to meter nu photo lo, camera ke gallery mathi. Pachhi "Add Record" dabavo.','Bhul hoy to niche history ma pen icon thi edit karo ane dustbin icon thi delete karo; delete pehla app puchhse.'],
  gs:['મેનુમાંથી "ડેટા એન્ટ્રી" ખોલો. તારીખ, પ્લાન્ટ અને ઇક્વિપમેન્ટ પસંદ કરો. ડેટા ૨૪ કલાક પછી લેવાતો હોય તો સેટિંગ્સમાં "ડેટા એન્ટ્રી મોડ" ડેઇલી રાખો, તો શિફ્ટ પૂછશે નહીં. પછી શિફ્ટ પ્રમાણે ડેટા લો તો શિફ્ટ-વાઇઝ કરો.','મીટર સ્ટાર્ટ અને મીટર એન્ડ લખો. એનર્જી કિલોવોટ કલાક આપોઆપ થઈ જશે, એટલે કે મીટર એન્ડ માઇનસ મીટર સ્ટાર્ટ. મીટર એન્ડ સ્ટાર્ટ કરતાં ઓછો હશે તો એપ આગળ વધવા નહીં દે.','રનિંગ અવર્સ લખો. ડીઝલવાળું મશીન હોય તો ડીઝલ સ્ટાર્ટ અને એન્ડ લખો; લિટર આપોઆપ થશે.','જરૂર હોય તો મીટરનો ફોટો લો, કેમેરા કે ગેલેરીમાંથી. પછી "એડ રેકોર્ડ" દબાવો.','ભૂલ હોય તો નીચે હિસ્ટરીમાં પેન આઇકનથી એડિટ કરો અને ડસ્ટબિન આઇકનથી ડિલીટ કરો; ડિલીટ પહેલાં એપ પૂછશે.']},
+{ic:'fa-plug-circle-bolt',rg:'Plant no total (main meter) alag',gu:'પ્લાન્ટનો કુલ વપરાશ (મુખ્ય મીટર) અલગ',
+ rs:['Menu ma "Plant Total" kholo. Tarikh, plant ane plant ni main meter nu total kWh lakho. Meter start ane end lakho to farak potani jate thase.','Equipment nu kWh alag lakhvanu chhe (Data Entry ke Excel). Plant total ane equipment total no farak "Other / unmetered load" tarike dekhase.','Dashboard, cost ane SEC plant total pramane j dekhase. Equipment page ma "Other / unmetered load" tarike bakino vaparash dekhase.','Equipment total plant total thi vadhu hoy to Alerts ma chetavani aavse. Reading tapaso.','Excel grid ma "Plant Total kWh" sheet ma plant na naam upar ek var lakhi ne roj nu total lakho.'],
+ gs:['મેનુમાંથી "પ્લાન્ટ ટોટલ" ખોલો. તારીખ, પ્લાન્ટ અને પ્લાન્ટની મુખ્ય મીટરનો કુલ કિલોવોટ કલાક લખો. મીટર સ્ટાર્ટ અને એન્ડ લખો તો તફાવત આપોઆપ થશે.','ઇક્વિપમેન્ટનું કિલોવોટ કલાક અલગ લખવાનું છે (ડેટા એન્ટ્રી કે એક્સેલમાં). પ્લાન્ટ ટોટલ અને ઇક્વિપમેન્ટ ટોટલનો તફાવત "અધર / અનમીટર્ડ લોડ" તરીકે દેખાશે.','ડેશબોર્ડ, ખર્ચ અને એસઈસી પ્લાન્ટ ટોટલ પ્રમાણે જ દેખાશે. ઇક્વિપમેન્ટ પેજમાં "અધર / અનમીટર્ડ લોડ" તરીકે બાકીનો વપરાશ દેખાશે.','ઇક્વિપમેન્ટ ટોટલ પ્લાન્ટ ટોટલથી વધુ હોય તો એલર્ટ્સમાં ચેતવણી આવશે. રીડિંગ તપાસો.','એક્સેલ ગ્રિડમાં "Plant Total kWh" શીટમાં પ્લાન્ટના નામ ઉપર એક વાર લખીને રોજનું ટોટલ લખો.']},
+{ic:'fa-table-cells',rg:'Daily grid Excel (sauthi saral)',gu:'ડેઇલી ગ્રિડ એક્સેલ (સૌથી સરળ)',
+ rs:['"Excel Import" ma upar "Daily grid" box chhe. "Download grid template" dabavo. Tamara plant ane equipment na naam pehla thi bharela hase.','Excel ma upar plant ane equipment na naam matra ek var lakho. Pachhi roj matra tarikh ane darek equipment no ek number lakho.','Running hours, diesel litres ane production na alag sheet chhe. Column no kram badlavo nahi.','Meter na reading lakhta ho to "Meter readings" pasand karo, app potani jate pachhla reading no farak kadhi dese. Reading MWh ma hoy to unit MWh pasand karo.','Plant no energy tena equipment nu total potani jate thase.','"Import grid file" dabavo, preview joi ne Confirm Import dabavo.'],
+ gs:['"એક્સેલ ઇમ્પોર્ટ"માં ઉપર "ડેઇલી ગ્રિડ" બોક્સ છે. "ડાઉનલોડ ગ્રિડ ટેમ્પલેટ" દબાવો. તમારા પ્લાન્ટ અને ઇક્વિપમેન્ટના નામ પહેલેથી ભરેલા હશે.','એક્સેલમાં ઉપર પ્લાન્ટ અને ઇક્વિપમેન્ટના નામ માત્ર એક વાર લખો. પછી રોજ માત્ર તારીખ અને દરેક ઇક્વિપમેન્ટનો એક નંબર લખો.','રનિંગ અવર્સ, ડીઝલ લિટર અને પ્રોડક્શનની અલગ શીટ છે. કૉલમનો ક્રમ બદલશો નહીં.','મીટરના રીડિંગ લખતા હો તો "મીટર રીડિંગ્સ" પસંદ કરો, એપ આપોઆપ પાછલા રીડિંગનો તફાવત કાઢી દેશે. રીડિંગ એમડબ્લ્યુએચમાં હોય તો યુનિટ એમડબ્લ્યુએચ પસંદ કરો.','પ્લાન્ટનો એનર્જી તેના ઇક્વિપમેન્ટનું કુલ આપોઆપ થશે.','"ઇમ્પોર્ટ ગ્રિડ ફાઇલ" દબાવો, પ્રીવ્યૂ જોઈને કન્ફર્મ ઇમ્પોર્ટ દબાવો.']},
 {ic:'fa-file-import',rg:'Excel import',gu:'એક્સેલ ઇમ્પોર્ટ',
  rs:['Menu ma "Excel Import" kholo. Template download karo ane tema tamaro data bharo.','"Tap to choose your file" dabavo ane phone ni Files, Drive ke Downloads mathi Excel ke CSV file pasand karo.','App columns ne potani jate match karse. Match na thay to upar mapping ma sudharo.','Preview ma bhul vali ane duplicate rows dekhase. Barabar lagey tyare "Confirm Import" dabavo. Bhul vali rows import nahi thay; teno error report download kari shakay.'],
  gs:['મેનુમાંથી "એક્સેલ ઇમ્પોર્ટ" ખોલો. ટેમ્પલેટ ડાઉનલોડ કરો અને તેમાં તમારો ડેટા ભરો.','"ફાઇલ પસંદ કરવા ટૅપ કરો" દબાવો અને ફોનની ફાઇલ્સ, ડ્રાઇવ કે ડાઉનલોડ્સમાંથી એક્સેલ કે સીએસવી ફાઇલ પસંદ કરો.','એપ કૉલમ આપોઆપ મેળવી લેશે. ન મળે તો ઉપર મેપિંગમાં સુધારો કરો.','પ્રીવ્યૂમાં ભૂલવાળી અને ડુપ્લિકેટ લાઇનો દેખાશે. બરાબર લાગે ત્યારે "કન્ફર્મ ઇમ્પોર્ટ" દબાવો. ભૂલવાળી લાઇનો ઇમ્પોર્ટ નહીં થાય; તેનો એરર રિપોર્ટ ડાઉનલોડ કરી શકાય.']},
@@ -2181,7 +2296,7 @@ function helpStop(){HSP.on=false;try{speechSynthesis.cancel()}catch(e){}document
 /* Every record is stored separately (emds/c/<collection>/<id>) so several people can enter data at the same time.
    Each device keeps its own full copy (works offline) and syncs changes both ways. Newest change wins per record. */
 const FB_DEFAULT={apiKey:'',databaseURL:''};
-const CCOLL=['plants','equip','energy','diesel','prod','dieselRecv','dieselAdj','dieselDips','bills','mreads'];
+const CCOLL=['plants','equip','energy','diesel','prod','dieselRecv','dieselAdj','dieselDips','bills','mreads','ptot'];
 const CDOCS=['settings','stock','mtargets','rates','areas','etypes','sample','meter','tariff'];
 const SV={'.sv':'timestamp'};
 function canon(v){if(v===null||v===undefined||(typeof v==='number'&&!isFinite(v)))return'';
@@ -2499,7 +2614,7 @@ function tariffReset(){ask('Reset tariff values?','All tariff settings go back t
 /* ============ render ============ */
 function render(){
   if(S.view==='entry'&&!S.noCap&&document.getElementById('ef_date'))S.ef=efRead();S.noCap=false;
-  const V={dash:renderDash,trends:renderTrends,plants:renderPlants,equip:renderEquip,entry:renderEntry,data:renderData,import:renderImport,diesel:renderDiesel,targets:renderTargets,cost:renderCost,kpi:renderKpi,alerts:renderAlerts,reports:renderReports,master:renderMaster,assets:renderMaster,formulas:renderFormulas,bills:renderBills,meter:renderMeter,help:renderHelp,eqd:renderEqDetail,backup:renderBackup,settings:renderSettings};
+  const V={dash:renderDash,trends:renderTrends,plants:renderPlants,equip:renderEquip,entry:renderEntry,ptotal:renderPtot,data:renderData,import:renderImport,diesel:renderDiesel,targets:renderTargets,cost:renderCost,kpi:renderKpi,alerts:renderAlerts,reports:renderReports,master:renderMaster,assets:renderMaster,formulas:renderFormulas,bills:renderBills,meter:renderMeter,help:renderHelp,eqd:renderEqDetail,backup:renderBackup,settings:renderSettings};
   Object.keys(CH).forEach(k=>{CH[k].destroy();delete CH[k]});
   ensureMaster();EQM=eqMap();validate(DF);validate(F);
   buildNav();$('#view').innerHTML=sampleBanner()+(V[S.view]||renderDash)();header();addTips();
