@@ -191,6 +191,42 @@ tr.sel td{background:rgba(34,211,238,.1)}
  .hlogo img{height:36px;max-width:96px}
 }
 @media(max-width:900px){.htitle h1{white-space:normal!important;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;font-size:15px}.htitle .co{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+body.locked .app,body.locked .bnav{display:none!important}
+body.locked{background:var(--bg)}
+
+/* premium login */
+.lg{background:#050b18;overflow:auto;align-items:center;padding:20px 16px;--lgc:#22d3ee;--lgc2:#6366f1}
+.lgbg{position:fixed;inset:0;overflow:hidden;pointer-events:none;background:radial-gradient(1200px 700px at 15% -10%,#0f2a52 0%,transparent 60%),radial-gradient(900px 600px at 100% 110%,#1b1a4d 0%,transparent 60%),linear-gradient(160deg,#050b18,#0a1630)}
+.lgbg:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 75%);mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 75%)}
+.lgbg i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:lgf 14s ease-in-out infinite}
+.lgbg i:nth-child(1){width:320px;height:320px;background:#0ea5e9;left:-80px;top:8%}
+.lgbg i:nth-child(2){width:280px;height:280px;background:#6366f1;right:-60px;top:40%;animation-delay:-5s}
+.lgbg i:nth-child(3){width:220px;height:220px;background:#14b8a6;left:35%;bottom:-90px;animation-delay:-9s}
+@keyframes lgf{0%,100%{transform:translate(0,0)}50%{transform:translate(26px,-30px)}}
+.lgcard{position:relative;width:min(410px,100%);margin:auto;padding:30px 26px 22px;border-radius:24px;color:#e6edf7;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.18);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);animation:lgin .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes lgin{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.lglogo{display:flex;justify-content:center;margin-bottom:14px}
+.lglogo .ring{width:112px;height:112px;border-radius:50%;padding:5px;background:conic-gradient(from 210deg,var(--lgc),var(--lgc2),var(--lgc));box-shadow:0 0 0 6px rgba(34,211,238,.08),0 12px 40px rgba(34,211,238,.28);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lglogo .ring img{width:100%;height:100%;border-radius:50%;object-fit:contain;background:#fff;padding:8px}
+.lglogo .ring i{width:100%;height:100%;border-radius:50%;background:#0b1730;display:flex;align-items:center;justify-content:center;font-size:44px;color:var(--lgc)}
+.lgco{margin:0;text-align:center;font-size:23px;font-weight:700;letter-spacing:.2px;line-height:1.25;color:#fff;overflow-wrap:anywhere}
+.lgsub{text-align:center;font-size:12.5px;color:#9fb0c9;margin-top:5px;letter-spacing:.4px}
+.lgline{height:2px;width:56px;margin:16px auto 18px;border-radius:2px;background:linear-gradient(90deg,var(--lgc),var(--lgc2))}
+.lgcard label{display:block;font-size:12px;font-weight:600;color:#b6c4da;margin:12px 0 6px;letter-spacing:.3px}
+.lgf{position:relative;display:flex;align-items:center}
+.lgf>i{position:absolute;left:14px;color:#7e92b3;font-size:14px;pointer-events:none}
+.lgf input{width:100%;box-sizing:border-box;padding:14px 44px 14px 40px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:rgba(5,11,24,.55);color:#fff;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s}
+.lgf input::placeholder{color:#62759a}
+.lgf input:focus{border-color:var(--lgc);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+.lgf .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;background:none;color:#8da1c2;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.lgf .eye i{position:static}
+.lgm{min-height:20px;margin:10px 0 4px;font-size:13px;color:#ff8a8a;text-align:center}
+.lgbtn{width:100%;padding:14px;border:0;border-radius:13px;font-size:16px;font-weight:700;color:#04101f;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,var(--lgc),#60a5fa 55%,var(--lgc2));box-shadow:0 10px 28px rgba(34,211,238,.28);transition:transform .15s,box-shadow .2s,opacity .2s}
+.lgbtn:hover{box-shadow:0 14px 34px rgba(34,211,238,.4)}.lgbtn:active{transform:scale(.985)}.lgbtn:disabled{opacity:.7;cursor:wait}
+.lgft{margin:16px 0 0;text-align:center;font-size:11.5px;line-height:1.7;color:#7e92b3}.lgft i{color:#34d399}.lgft a{color:var(--lgc)}
+@media(max-width:420px){.lgcard{padding:26px 20px 20px;border-radius:20px}.lglogo .ring{width:98px;height:98px}.lgco{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.lgbg i,.lgcard{animation:none}}
 </style>
 </head>
 <body>
@@ -2215,21 +2251,24 @@ function saveCV(ev){ev.preventDefault();const v=Number(ev.target.elements.cv.val
 /* ============ WhatsApp daily summary ============ */
 function waDefaultDate(){const t=today();if(DB.energy.some(x=>x.date===t))return t;const d=DB.energy.reduce((m,x)=>x.date>m?x.date:m,'');return d||t}
 function waText(d){
-  const a=withF({},()=>agg({f:d,to:d})),rows=withF({},()=>plantRows(a)),P=pu(),s=DB.settings,L=[];
-  const dt=new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
-  const tg=a.partial?0:a.tPeriod,vp=tg?CALC.variancePct(a.kwh,tg):null,sg=v=>(v>0?'+':'')+v.toFixed(1)+'%';
-  L.push('*'+s.company+'*','⚡ Daily Energy Report – '+dt,'');
-  L.push('*Energy:* '+fmt(a.kwh)+' kWh'+(tg?' (target '+fmt(tg)+', '+sg(vp)+')':''));
-  L.push('*Diesel:* '+fmt(a.litres,1)+' L ('+money(a.dcost)+')');
-  if(a.prodTot)L.push('*Production:* '+fmt(a.prodTot,1)+' '+P.n+' | SEC '+fmt(a.sec,1)+' '+secU());
-  L.push('*Cost:* '+money(a.ecost+a.dcost)+' (electricity '+money(a.ecost)+')');
+  const a=withF({},()=>agg({f:d,to:d})),rows=withF({},()=>plantRows(a)),P=pu(),s=DB.settings,L=[],LN='━━━━━━━━━━━━━━━━━━';
+  const dt=new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
+  const tg=a.partial?0:a.tPeriod,vp=tg?CALC.variancePct(a.kwh,tg):null,sg=v=>(v>0?'+':'')+v.toFixed(1)+'%',dot=v=>v===null||v===undefined?'⚪':v>5?'🔴':v>0?'🟡':'🟢';
+  L.push('🏭 *'+(s.company||'Energy Report').toUpperCase()+'*','📊 *Daily Energy & Diesel Report*','📅 '+dt,LN);
+  L.push('','⚡ *ENERGY*','   '+fmt(a.kwh)+' kWh');
+  if(tg)L.push('   🎯 Target '+fmt(tg)+' kWh  '+dot(vp)+' '+sg(vp));
+  L.push('','⛽ *DIESEL*','   '+fmt(a.litres,1)+' L  •  '+money(a.dcost));
+  if(a.prodTot)L.push('','📦 *PRODUCTION*','   '+fmt(a.prodTot,1)+' '+P.n,'   📈 SEC '+fmt(a.sec,1)+' '+secU());
+  L.push('','💰 *TOTAL COST*','   '+money(a.ecost+a.dcost),'   ⚡ Electricity '+money(a.ecost)+'  |  ⛽ Diesel '+money(a.dcost));
   const pr=rows.filter(x=>x.kwh>0||x.l>0);
-  if(pr.length>1){L.push('','*Plant-wise*');pr.forEach(x=>L.push('• '+x.name+': '+fmt(x.kwh)+' kWh'+(x.vr!==null?' ('+sg(x.vr)+')':'')+(x.l?', diesel '+fmt(x.l,1)+' L':'')+(x.sec?', SEC '+fmt(x.sec,1):'')))}
-  try{const sl=stockLedger(d,d);if(sl&&sl.rows.length){const c=sl.rows[0].close,ro=+DB.stock.reorder||0;L.push('','*Diesel stock:* '+fmt(c)+' L'+(ro&&c<=ro?' ⚠ below reorder level':''))}}catch(e){}
+  if(pr.length>1){L.push('',LN,'🏭 *PLANT-WISE*');pr.forEach(x=>L.push((x.vr!==null?dot(x.vr):'🔹')+' *'+x.name+'*: '+fmt(x.kwh)+' kWh'+(x.vr!==null?' ('+sg(x.vr)+')':'')+(x.l?' • ⛽ '+fmt(x.l,1)+' L':'')+(x.sec?' • SEC '+fmt(x.sec,1):'')))}
+  try{const te=Object.entries(a.eq||{}).filter(([id,q])=>q.kwh>0).sort((x,y)=>y[1].kwh-x[1].kwh).slice(0,3);if(te.length){L.push('',LN,'🔝 *TOP CONSUMERS*');te.forEach(([id,q],i)=>L.push(['🥇','🥈','🥉'][i]+' '+(EQM[id]?.name||'Equipment')+': '+fmt(q.kwh)+' kWh'+(a.kwh?' ('+(q.kwh/a.kwh*100).toFixed(0)+'%)':'')))}}catch(e){}
+  try{const sl=stockLedger(d,d);if(sl&&sl.rows.length){const c=sl.rows[0].close,ro=+DB.stock.reorder||0;L.push('',LN,'🛢️ *DIESEL STOCK*','   '+fmt(c)+' L'+(ro&&c<=ro?'  🚨 Below reorder level — please order':'  ✅'))}}catch(e){}
   try{const al=withF({},()=>computeAlerts(d,d,false)).sort((x,y)=>(x.sev==='critical'?0:1)-(y.sev==='critical'?0:1));
-    if(al.length){L.push('','⚠ *'+al.length+' abnormal'+(al.length>1?'ities':'ity')+'*');al.slice(0,3).forEach(x=>L.push('• '+[x.plant,x.equip].filter(v=>v&&v!=='—').join(' / ')+': '+String(x.msg).replace(/\s+/g,' ')));if(al.length>3)L.push('• …and '+(al.length-3)+' more')}else L.push('','✅ No abnormalities')}catch(e){}
-  if(!a.E.length&&!a.D.length)L.push('','No readings recorded for this date.');
-  L.push('','Reported by '+(Cloud.auth&&Cloud.auth.name||s.user)+((Cloud.auth&&Cloud.auth.role||s.role)?' ('+(Cloud.auth&&Cloud.auth.role||s.role)+')':''));return L.join('\n')}
+    L.push('',LN);if(al.length){L.push('🚨 *'+al.length+' ABNORMALIT'+(al.length>1?'IES':'Y')+'*');al.slice(0,3).forEach(x=>L.push((x.sev==='critical'?'🔴 ':'🟠 ')+[x.plant,x.equip].filter(v=>v&&v!=='—').join(' / ')+': '+String(x.msg).replace(/\s+/g,' ')));if(al.length>3)L.push('➕ '+(al.length-3)+' more')}else L.push('✅ *All normal — no abnormalities*')}catch(e){}
+  if(!a.E.length&&!a.D.length)L.push('','📭 No readings recorded for this date.');
+  const who=Cloud.auth&&Cloud.auth.name||s.user,rl=Cloud.auth&&Cloud.auth.role||s.role;
+  L.push('',LN,'👤 _Reported by '+who+(rl?' ('+rl+')':'')+'_','🕒 _'+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'_');return L.join('\n')}
 function waOpen(){const d=waDefaultDate();
   openModal({title:'Send daily summary on WhatsApp',ok:'<i class="fa-brands fa-whatsapp"></i> Open WhatsApp',fn:waSend,html:`<div class="form" style="grid-template-columns:minmax(0,1fr)"><div><label for="wa_d">Date</label><input type="date" id="wa_d" value="${d}" max="${today()}" onchange="waRefresh()"></div><div><label for="wa_t">Message (you can edit it before sending)</label><textarea id="wa_t" rows="13" style="width:100%;font-size:13px;line-height:1.45">${esc(waText(d))}</textarea></div></div><div class="acts" style="margin-top:10px"><button type="button" class="btn sec" onclick="waCopy()"><i class="fa-solid fa-copy"></i>Copy</button>${navigator.share?'<button type="button" class="btn sec" onclick="waShare()"><i class="fa-solid fa-share-nodes"></i>Share…</button>':''}</div><p style="color:var(--muted);font-size:12px;margin-top:8px">WhatsApp opens with this text ready. Choose the person or group and press send.</p>`})}
 function waRefresh(){const d=document.getElementById('wa_d').value;if(d)document.getElementById('wa_t').value=waText(d)}
@@ -2468,15 +2507,26 @@ const Cloud={
   ui(){const el=document.getElementById('syncDot');if(el){const s=this.st.s,m={off:['','Cloud sync is off'],ok:['ok','Synced'],syncing:['busy','Syncing…'],pending:['busy','Changes waiting to sync'],offline:['off','Offline – changes will sync later'],error:['bad','Sync problem: '+this.st.err],login:['bad','Signed out']}[s]||['',''];el.className='sdot '+m[0];el.title=m[1];el.style.display=this.on()?'':'none'}
     if(typeof S!=='undefined'&&S.view==='settings')refreshCloudCard()},
   showLogin(msg){if(document.getElementById('login'))return;const c=this.cfg();if(!c)return;
+    const st=DB.settings||{},nm=esc(st.company||st.appName||'Energy Management'),logo=st.logo?`<img src="${st.logo}" alt="${nm} logo">`:'<i class="fa-solid fa-bolt"></i>';
     const d=document.createElement('div');d.id='login';d.className='lg';
-    d.innerHTML=`<form class="glass card box" onsubmit="Cloud.doLogin(event)"><div style="text-align:center;margin-bottom:14px"><div style="font-size:34px;color:var(--cyan)">${DB.settings.logo?logoImg('','max-height:70px;max-width:200px;object-fit:contain'):'<i class="fa-solid fa-bolt"></i>'}</div><h2 style="margin:6px 0 2px">${esc(DB.settings.company||'EMDS')}</h2><small style="color:var(--muted)">Energy &amp; Diesel Management System</small></div>
-     <label for="lg_e">Email</label><input id="lg_e" type="email" autocomplete="username" required value="${esc((this.auth&&this.auth.email)||localStorage.getItem('emds_lastEmail')||'')}"><label for="lg_p" style="margin-top:10px">Password</label><input id="lg_p" type="password" autocomplete="current-password" required>
-     <div id="lg_m" style="color:var(--red);font-size:13px;min-height:20px;margin:8px 0">${esc(msg||'')}</div><button class="btn" id="lg_b" style="width:100%"><i class="fa-solid fa-right-to-bracket"></i>Sign in</button>
-     <p style="color:var(--muted);font-size:12px;margin-top:12px;text-align:center;line-height:1.5">Your Admin gives you the email and password.<br><a href="#" onclick="event.preventDefault();Cloud.localOnly()" style="color:var(--cyan)">Use on this device only (no cloud)</a></p></form>`;
-    document.body.appendChild(d);setTimeout(()=>{const e=document.getElementById('lg_e');if(e)e.focus()},50)},
-  localOnly(){ask('Use without cloud?','Cloud sync will be switched off on this device. The data already on this device stays, and you can connect again later from Settings.','Use on this device only',()=>{this.clearCfg();const l=document.getElementById('login');if(l)l.remove();toast('Cloud sync switched off on this device');render()},false)},
+    d.innerHTML=`<div class="lgbg"><i></i><i></i><i></i></div>
+     <form class="lgcard" onsubmit="Cloud.doLogin(event)" autocomplete="on">
+      <div class="lglogo"><div class="ring">${logo}</div></div>
+      <h2 class="lgco">${nm}</h2>
+      <div class="lgsub">Energy &amp; Diesel Management System</div>
+      <div class="lgline"></div>
+      <label for="lg_e">Email</label>
+      <div class="lgf"><i class="fa-solid fa-envelope"></i><input id="lg_e" type="email" autocomplete="username" inputmode="email" placeholder="you@company.com" required value="${esc((this.auth&&this.auth.email)||localStorage.getItem('emds_lastEmail')||'')}"></div>
+      <label for="lg_p">Password</label>
+      <div class="lgf"><i class="fa-solid fa-lock"></i><input id="lg_p" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="eye" onclick="const i=document.getElementById('lg_p'),h=i.type==='password';i.type=h?'text':'password';this.innerHTML='<i class=&quot;fa-solid fa-eye'+(h?'-slash':'')+'&quot;></i>'" aria-label="Show or hide password"><i class="fa-solid fa-eye"></i></button></div>
+      <div id="lg_m" class="lgm" role="alert">${esc(msg||'')}</div>
+      <button class="lgbtn" id="lg_b"><i class="fa-solid fa-right-to-bracket"></i>Sign in</button>
+      <p class="lgft"><i class="fa-solid fa-shield-halved"></i> Secure cloud login &bull; Role-based access<br>Your Admin gives you the email and password.${FB_DEFAULT.apiKey?'':'<br><a href="#" onclick="event.preventDefault();Cloud.localOnly()">Use on this device only (no cloud)</a>'}</p>
+     </form>`;
+    document.body.classList.add('locked');document.body.appendChild(d);setTimeout(()=>{const e=document.getElementById(document.getElementById('lg_e').value?'lg_p':'lg_e');if(e)e.focus()},80)},
+  localOnly(){ask('Use without cloud?','Cloud sync will be switched off on this device. The data already on this device stays, and you can connect again later from Settings.','Use on this device only',()=>{this.clearCfg();const l=document.getElementById('login');if(l)l.remove();document.body.classList.remove('locked');toast('Cloud sync switched off on this device');render()},false)},
   async doLogin(ev){ev.preventDefault();const e=document.getElementById('lg_e').value.trim(),p=document.getElementById('lg_p').value,m=document.getElementById('lg_m'),b=document.getElementById('lg_b');m.textContent='';b.disabled=true;b.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>Signing in…';
-    try{await this.signIn(e,p);try{localStorage.setItem('emds_lastEmail',e)}catch(x){}const l=document.getElementById('login');if(l)l.remove();toast('Welcome, '+(this.auth.name||e));this.st.s='idle';this.start();render()}
+    try{await this.signIn(e,p);try{localStorage.setItem('emds_lastEmail',e)}catch(x){}const l=document.getElementById('login');if(l)l.remove();document.body.classList.remove('locked');toast('Welcome, '+(this.auth.name||e));this.st.s='idle';this.start();render()}
     catch(x){m.textContent=x.message;b.disabled=false;b.innerHTML='<i class="fa-solid fa-right-to-bracket"></i>Sign in'}},
   boot(){try{const h=location.hash;if(h&&h.indexOf('#fb=')===0){const c=JSON.parse(decodeURIComponent(escape(atob(h.slice(4)))));if(c&&c.apiKey&&c.databaseURL){this.setCfg(c);history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>toast('Cloud setup received. Please sign in.','info'),400)}}}catch(e){}
     this.loadState();if(!this.on()){this.ui();return}
@@ -2712,6 +2762,7 @@ function render(){
   $('#view').style.animation='none';void $('#view').offsetWidth;$('#view').style.animation=''}
 window.addEventListener&&['dragover','drop'].forEach(n=>window.addEventListener(n,e=>{if(!(e.target&&e.target.closest&&e.target.closest('#drop')))e.preventDefault()}));
 try{const t=localStorage.getItem('emds_theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+try{Cloud.loadState();if(Cloud.on()&&!Cloud.auth)document.body.classList.add('locked')}catch(e){}
 save();tick();setInterval(tick,1000);render();Cloud.boot();
 </script>
 </body>
