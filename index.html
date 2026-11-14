@@ -10,8 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<style>
-:root{--bg1:#050b18;--bg2:#0a1630;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.09);--bd:rgba(120,190,255,.15);--tx:#eaf2ff;--muted:#8fa3c4;--grid:rgba(143,163,196,.14);--acc:#22d3ee;--acc2:#3b82f6;--amber:#fbbf24;--green:#34d399;--red:#f87171;--violet:#a78bfa;--shadow:0 12px 34px rgba(0,0,0,.38);--side:rgba(6,14,32,.82);--inp:rgba(255,255,255,.07);--line:rgba(255,255,255,.035)}
+<style>:root{--bg1:#050b18;--bg2:#0a1630;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.09);--bd:rgba(120,190,255,.15);--tx:#eaf2ff;--muted:#8fa3c4;--grid:rgba(143,163,196,.14);--acc:#22d3ee;--acc2:#3b82f6;--amber:#fbbf24;--green:#34d399;--red:#f87171;--violet:#a78bfa;--shadow:0 12px 34px rgba(0,0,0,.38);--side:rgba(6,14,32,.82);--inp:rgba(255,255,255,.07);--line:rgba(255,255,255,.035)}
 [data-theme=light]{--bg1:#eef3fb;--bg2:#dce8f9;--card:rgba(255,255,255,.74);--card2:rgba(255,255,255,.95);--bd:rgba(30,64,175,.13);--tx:#0f1b33;--muted:#58698a;--grid:rgba(30,64,175,.1);--acc:#0891b2;--acc2:#2563eb;--amber:#d97706;--green:#059669;--red:#dc2626;--violet:#7c3aed;--shadow:0 10px 28px rgba(30,64,175,.12);--side:rgba(255,255,255,.85);--inp:rgba(15,27,51,.05);--line:rgba(30,64,175,.045)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -224,8 +223,7 @@ tr.sel td{background:rgba(34,211,238,.1)}
 <div id="toast"></div>
 <input type="file" id="file" hidden>
 
-<script>
-'use strict';
+<script>'use strict';
 /* ============ helpers ============ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1985,7 +1983,7 @@ function renderMaster(){
   const t=MT.some(x=>x[0]===S.mt)?S.mt:'plants';S.mt=t;
   const body={plants:mPlants,areas:mAreas,equip:mEquip,types:mTypes,erate:()=>mRates('e'),drate:()=>mRates('d'),prod:mProd,targets:mTargets}[t]();
   return pageTitle('Master Data','Set up plants, areas, equipment, rates, units and targets — changes apply across the whole dashboard')+
-  `<div class="mtabs">${MT.map(([k,i,l])=>`<button class="btn sm ${k===t?'':'sec'}" onclick="mtab('${k}')" title="Manage ${l.toLowerCase()}"><i class="fa-solid ${i}"></i>${l}</button>`).join('')}</div>${body}`}
+  masterBar()+`<div class="mtabs">${MT.map(([k,i,l])=>`<button class="btn sm ${k===t?'':'sec'}" onclick="mtab('${k}')" title="Manage ${l.toLowerCase()}"><i class="fa-solid ${i}"></i>${l}</button>`).join('')}</div>${body}`}
 /* ---- plants ---- */
 function mPlants(){const ed=S.mpEdit?DB.plants.find(p=>p.id===S.mpEdit):null;
   const rows=DB.plants.map(p=>{const ne=DB.equip.filter(e=>e.plant===p.id).length,nr=DB.energy.filter(x=>x.plant===p.id).length+DB.diesel.filter(x=>x.plant===p.id).length;
@@ -2045,6 +2043,64 @@ function delEquip(id){const e=EQM[id];if(!e)return;const n=DB.energy.filter(x=>x
   ask('Delete equipment?',`<b>${esc(e.name)}</b> and its <b>${fmt(n)}</b> energy / diesel record(s) will be permanently deleted. To keep the history, set its status to <b>Decommissioned</b> instead.`,'Delete equipment',()=>{DB.equip=DB.equip.filter(x=>x.id!==id);DB.energy=DB.energy.filter(x=>x.equip!==id);DB.diesel=DB.diesel.filter(x=>x.equip!==id);if(S.eqEdit===id)S.eqEdit='';if(S.eqd===id){S.eqd='';S.view='equip'}save();toast('Equipment deleted');render()})}
 function mEquip(){const PL=plMap(),rows=DB.equip.map(e=>`<tr><td><span class="chip b">${esc(e.code||e.id)}</span></td><td><b>${esc(e.name)}</b>${e.s?' <span class="chip x" title="Part of the sample data">Sample</span>':''}</td><td>${esc(PL[e.plant]?.name||'—')}</td><td>${esc(e.area||'General')}</td><td>${esc(e.etype||'—')}</td><td class="n">${e.kw?fmt(e.kw,e.kw%1?1:0)+' '+esc(e.capUnit||'kW'):'—'}</td><td class="n">${e.ratedVoltage!=null&&e.ratedVoltage!==''?fmt(e.ratedVoltage):'—'}</td><td class="n">${e.ratedCurrent!=null&&e.ratedCurrent!==''?fmt(e.ratedCurrent,e.ratedCurrent%1?1:0):'—'}</td><td>${esc(e.manufacturer||'—')}</td><td>${esc(e.commissioned||'—')}</td><td>${esc(e.meterType||'—')}</td><td>${eqStChip(e.status)}</td><td style="white-space:nowrap"><button class="btn sec sm" onclick="editEquip('${e.id}')" title="Edit equipment"><i class="fa-solid fa-pen"></i></button> <button class="btn sec sm" onclick="dupEquip('${e.id}')" title="Duplicate equipment"><i class="fa-solid fa-copy"></i></button> <button class="btn sec sm" onclick="delEquip('${e.id}')" title="Delete equipment"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
   return eqFormCard()+`<div class="glass card"><h3><i class="fa-solid fa-table-list"></i>Equipment Master<span class="r">${DB.equip.length} equipment</span></h3><div class="tw"><table style="min-width:1250px"><thead><tr><th>ID</th><th>Name</th><th>Plant</th><th>Area</th><th>Type</th><th class="n">Capacity</th><th class="n">Voltage (V)</th><th class="n">Current (A)</th><th>Manufacturer</th><th>Commissioned</th><th>Meter</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=13 class="empty">No equipment yet — add your first equipment above</td></tr>'}</tbody></table></div></div>`}
+
+/* ---- master data: ONE Excel workbook (template / export / import) ---- */
+const MX={
+ Plants:{c:['Plant','Energy Target (kWh/month)','Diesel Target (L/month)','SEC Target','Production Target (per month)'],ex:[['Plant A',900000,12000,450,2000],['Plant B',250000,0,300,800]]},
+ Areas:{c:['Area'],ex:[['Furnace Bay'],['Compressor House'],['DG Yard']]},
+ 'Equipment Types':{c:['Equipment Type'],ex:[['Crusher'],['Conveyor']]},
+ Equipment:{c:['Plant','Area','Equipment','Equipment Type','Energy Source','Capacity','Capacity Unit','Equipment ID','Rated Voltage (V)','Rated Current (A)','Manufacturer','Commissioning Date','Meter Type','Status','Remarks'],ex:[['Plant A','Furnace Bay','Induction Furnace 1','Furnace','Electrical',1500,'kW','EQ-001',415,2100,'ABB','2020-04-01','Digital Energy Meter','Active',''],['Plant A','DG Yard','DG Set 1','DG Set','Diesel',500,'kVA','EQ-002','','','Cummins','2019-01-15','Fuel Flow Meter','Active','']]},
+ 'Energy Rates':{c:['Effective From','Rate (per kWh)','Note'],ex:[['2026-04-01',8.5,'Revised tariff']]},
+ 'Diesel Rates':{c:['Effective From','Rate (per litre)','Note'],ex:[['2026-04-01',92,'']]},
+ 'Diesel Receipts':{c:['Date','Litres','Rate (per litre)','Supplier','Invoice / Challan','Remarks'],ex:[['2026-11-05',2000,92,'ABC Fuels','INV-101','']]}
+};
+const EQM_COLS=MX.Equipment.c;
+function mxInstr(){return[['Sheet','Column','Required','What to enter'],['Plants','Plant','Yes','Plant name. New plants are created; existing ones get the targets updated.'],['Plants','Targets','No','Monthly kWh, diesel litres, SEC and production target. Blank = no change.'],['Areas','Area','Yes','Area / department name.'],['Equipment Types','Equipment Type','Yes','Your own types (built-in types already exist: '+BASE_ET.join(', ')+').'],['Equipment','Plant, Equipment','Yes','Same name in the same plant updates the equipment. New plant / area / type are created automatically.'],['Equipment','Energy Source','No','Electrical or Diesel. Blank = Diesel for DG Set, else Electrical.'],['Equipment','Capacity Unit','No','kW, kVA, HP, TR, kg/h'],['Equipment','Equipment ID','No','Blank = EQ-xxx given automatically.'],['Equipment','Commissioning Date','No','YYYY-MM-DD'],['Equipment','Meter Type','No',METER_TYPES.join(', ')],['Equipment','Status','No',EQ_STATUS.join(', ')],['Energy Rates / Diesel Rates','Effective From, Rate','Yes','Rate applies to records on/after the date. Same date replaces the old rate.'],['Diesel Receipts','Date, Litres, Rate','Yes','Diesel purchased / received. Same date + litres + invoice is skipped as a duplicate.'],['All','Sheets','','Delete or leave empty the sheets you do not need. Daily energy / diesel readings, production and plant totals are imported from Excel Import; meter readings from Incomer Meter.']]}
+function eqmTemplate(withData){masterXlsx(withData)}
+function masterXlsx(withData){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  const PL=plMap(),wb=XLSX.utils.book_new(),add=(n,rows,w)=>{const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=(rows[0]||[]).map(c=>({wch:Math.max(w||14,String(c).length+2)}));XLSX.utils.book_append_sheet(wb,ws,n)};
+  const D={};
+  if(withData){
+   D.Plants=DB.plants.map(p=>{const g=tgt(p.id,'0000-00');return[p.name,Math.round(g.kwh),Math.round(g.diesel),g.sec,g.prod]});
+   D.Areas=allAreas().filter(a=>a!=='General').map(a=>[a]);D['Equipment Types']=DB.etypes.filter(t=>!BASE_ET.includes(t)).map(t=>[t]);
+   D.Equipment=DB.equip.map(e=>[PL[e.plant]?.name||'',e.area==='General'?'':e.area||'',e.name,e.etype||'Other',e.type==='diesel'?'Diesel':'Electrical',e.kw||'',e.capUnit||'kW',e.code||'',e.ratedVoltage??'',e.ratedCurrent??'',e.manufacturer||'',e.commissioned||'',e.meterType||'',e.status||'Active',e.remarks||'']);
+   D['Energy Rates']=[...DB.rates.e].sort((x,y)=>x.from.localeCompare(y.from)).map(r=>[r.from,r.rate,r.note||'']);D['Diesel Rates']=[...DB.rates.d].sort((x,y)=>x.from.localeCompare(y.from)).map(r=>[r.from,r.rate,r.note||'']);
+   ensureStock();D['Diesel Receipts']=[...DB.dieselRecv].sort((x,y)=>x.date.localeCompare(y.date)).map(r=>[r.date,r.litres,r.rate,r.supplier||'',r.invoice||'',r.remarks||''])}
+  Object.keys(MX).forEach(n=>add(n,[MX[n].c,...(D[n]||[])]));
+  if(!withData){const ex=[];Object.keys(MX).forEach(n=>{ex.push(['['+n+']']);ex.push(MX[n].c);MX[n].ex.forEach(r=>ex.push(r));ex.push([])});add('Example (do not import)',ex,16)}
+  add('Instructions',mxInstr(),28);
+  XLSX.writeFile(wb,withData?'Master_Data_Export.xlsx':'Master_Data_Template.xlsx');toast('Excel downloaded')}
+function eqmPick(inp){masterPick(inp)}
+function masterPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
+  const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');rd.onload=e=>{try{masterLoad(XLSX.read(e.target.result,{type:'array'}))}catch(err){toast('Could not read file: '+err.message,'err')}};rd.readAsArrayBuffer(f)}
+const nk=x=>String(x==null?'':x).toLowerCase().replace(/[^a-z0-9]/g,'');
+function mxSheet(wb,name,req){const sn=wb.SheetNames.find(n=>nk(n)===nk(name));if(!sn)return null;
+  const a=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true});const hi=a.findIndex(r=>req.every(k=>r.some(c=>nk(c).startsWith(k))));if(hi<0)return{rows:[],bad:1};
+  const H=a[hi].map(nk),ix=k=>{let i=H.indexOf(k);if(i<0)i=H.findIndex(h=>h&&h.startsWith(k));return i};
+  const rows=a.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=='')).map(r=>({raw:k=>{const i=ix(k);return i<0?'':r[i]},g:k=>{const i=ix(k);return i<0?'':String(r[i]).trim()},n:k=>{const i=ix(k),v=i<0?'':String(r[i]).replace(/,/g,'').trim();return v===''||isNaN(+v)?null:+v}}));return{rows}}
+function masterLoad(wb){ensureMaster();ensureStock();const st={},bump=(k,n=1)=>st[k]=(st[k]||0)+n,warn=[];
+  const PLn={};DB.plants.forEach(p=>PLn[p.name.toLowerCase()]=p);const getPl=n=>{let p=PLn[n.toLowerCase()];if(!p){p={id:uid(),name:n,base:0,tKWh:0,tDiesel:0,tSEC:0};DB.plants.push(p);PLn[n.toLowerCase()]=p;bump('new plants')}return p};
+  let sh;
+  if((sh=mxSheet(wb,'Plants',['plant']))){sh.rows.forEach(r=>{const n=r.g('plant');if(!n)return;const p=getPl(n),k=r.n('energytarget'),d=r.n('dieseltarget'),s=r.n('sectarget'),q=r.n('productiontarget');if(k!==null){p.mKWh=k;p.tKWh=k/30}if(d!==null){p.mDiesel=d;p.tDiesel=d/30}if(s!==null)p.tSEC=s;if(q!==null)p.mProd=q;bump('plants')})}
+  if((sh=mxSheet(wb,'Areas',['area']))){sh.rows.forEach(r=>{const n=r.g('area');if(!n||n.length>40)return;if(!allAreas().some(a=>a.toLowerCase()===n.toLowerCase())){DB.areas.push(n);bump('areas')}})}
+  if((sh=mxSheet(wb,'Equipment Types',['equipmenttype']))){sh.rows.forEach(r=>{const n=r.g('equipmenttype');if(n.length<2||n.length>30)return;if(!ETYPES.some(t=>t.toLowerCase()===n.toLowerCase())){ETYPES.push(n);DB.etypes.push(n);bump('equipment types')}})}
+  if((sh=mxSheet(wb,'Equipment',['plant','equipment']))){const codes=new Set(DB.equip.map(e=>e.code)),ci=(list,v,d)=>list.find(x=>x.toLowerCase()===String(v).toLowerCase())||d;
+    sh.rows.forEach(r=>{const plant=r.g('plant'),name=r.g('equipment');if(!plant||!name){if(plant||name)bump('rows skipped');return}
+      const pl=getPl(plant);let et=r.g('equipmenttype')||'Other';const f=ETYPES.find(x=>x.toLowerCase()===et.toLowerCase());if(f)et=f;else{ETYPES.push(et);if(!DB.etypes.includes(et))DB.etypes.push(et)}
+      const src=r.g('energysource').toLowerCase(),type=src?(src.startsWith('d')?'diesel':'electrical'):(et==='DG Set'?'diesel':'electrical'),cd=r.g('commissioning'),area=r.g('area')||'General';
+      if(area!=='General'&&!allAreas().some(a=>a.toLowerCase()===area.toLowerCase()))DB.areas.push(area);
+      const o={name,plant:pl.id,area,etype:et,type,kw:r.n('capacity')||0,capUnit:ci(['kW','kVA','HP','TR','kg/h'],r.g('capacityunit'),'kW'),ratedVoltage:r.n('ratedvoltage'),ratedCurrent:r.n('ratedcurrent'),manufacturer:r.g('manufacturer'),commissioned:/^\d{4}-\d{2}-\d{2}$/.test(cd)&&cd<=today()?cd:'',meterType:ci(METER_TYPES,r.g('metertype'),'Digital Energy Meter'),status:ci(EQ_STATUS,r.g('status'),'Active'),remarks:r.g('remarks')};
+      const ex=DB.equip.find(e=>e.plant===pl.id&&e.name.toLowerCase()===name.toLowerCase());
+      if(ex){Object.assign(ex,o);bump('equipment updated')}else{let code=r.g('equipmentid');if(!code||codes.has(code))code=nextCode();codes.add(code);DB.equip.push({id:uid(),code,...o});bump('equipment added')}})}
+  [['Energy Rates','e'],['Diesel Rates','d']].forEach(([sn,k])=>{if(!(sh=mxSheet(wb,sn,['effectivefrom','rate'])))return;
+    sh.rows.forEach(r=>{const d=impDate(r.raw('effectivefrom')),v=r.n('rate');if(d.bad||d.e||!(v>0)||v>10000){bump('rows skipped');return}const L=DB.rates[k],same=L.find(x=>x.from===d.v);if(same)L.splice(L.indexOf(same),1);L.push({id:uid(),from:d.v,rate:v,note:r.g('note').slice(0,80)});bump(k==='e'?'energy rates':'diesel rates')});DB.rates[k].sort((x,y)=>x.from.localeCompare(y.from))});
+  if((sh=mxSheet(wb,'Diesel Receipts',['date','litres']))){sh.rows.forEach(r=>{const d=impDate(r.raw('date')),L=r.n('litres'),rt=r.n('rate');if(d.bad||d.e||d.v>today()||!(L>0)||!(rt>0)){bump('rows skipped');return}
+    const inv=r.g('invoice');if(DB.dieselRecv.some(x=>x.date===d.v&&x.litres===L&&(x.invoice||'')===inv)){bump('duplicates skipped');return}
+    DB.dieselRecv.push({id:uid(),date:d.v,litres:L,rate:rt,supplier:r.g('supplier'),invoice:inv,remarks:r.g('remarks')});bump('diesel receipts')})}
+  const keys=Object.keys(st).filter(k=>!/skipped/.test(k));if(!keys.length){toast('Nothing imported — use sheet names Plants, Areas, Equipment Types, Equipment, Energy Rates, Diesel Rates, Diesel Receipts with their header row','err');return}
+  ensureMaster();EQM=eqMap();save();render();toast('Imported: '+Object.entries(st).map(([k,v])=>v+' '+k).join(', '))}
+function masterBar(){return`<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-file-excel"></i>Master Data — Excel<span class="r">plants, targets, areas, types, equipment, rates, diesel receipts</span></h3><div class="fact" style="margin:0"><button class="btn sec" onclick="masterXlsx(false)" title="Blank Excel template with all master data sheets"><i class="fa-solid fa-file-arrow-down"></i> Download template</button> <button class="btn sec" onclick="masterXlsx(true)" title="Export current master data to Excel"><i class="fa-solid fa-download"></i> Export current</button> <label class="btn" style="cursor:pointer" title="Import filled Excel"><i class="fa-solid fa-file-import"></i> Import Excel<input type="file" accept=".xlsx,.xls,.csv" hidden onchange="masterPick(this)"></label></div><p style="color:var(--muted);font-size:12px;margin:8px 0 0">Fill only the sheets you need, then import. Existing items are updated, not duplicated. Daily readings: <a class="lnk" onclick="go('import')">Excel Import</a> · Meter readings: <a class="lnk" onclick="go('meter')">Incomer Meter</a>.</p></div>`}
 /* ---- equipment types ---- */
 function mTypes(){const ed=S.metEdit,cnt=t=>DB.equip.filter(e=>e.etype===t).length,custom=DB.etypes.filter(t=>!BASE_ET.includes(t));
   const crow=custom.map(t=>`<tr><td><b>${esc(t)}</b></td><td class="n">${cnt(t)}</td><td style="white-space:nowrap"><button class="btn sec sm" onclick="S.metEdit=decodeURIComponent('${q$(t)}');render()" title="Rename type"><i class="fa-solid fa-pen"></i></button> <button class="btn sec sm" onclick="delEType(decodeURIComponent('${q$(t)}'))" title="Delete type"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
