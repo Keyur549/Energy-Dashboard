@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1220">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Energy EMS">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <title>Electrical Energy & Diesel Management System</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
@@ -2895,6 +2902,8 @@ window.addEventListener&&['dragover','drop'].forEach(n=>window.addEventListener(
 try{const t=localStorage.getItem('emds_theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
 try{Cloud.loadState();if(Cloud.on()&&!Cloud.auth)document.body.classList.add('locked')}catch(e){}
 save();tick();setInterval(tick,1000);render();Cloud.boot();
+
+try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 </script>
 </body>
 </html>
