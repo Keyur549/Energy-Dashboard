@@ -2371,7 +2371,7 @@ function helpStop(){HSP.on=false;try{speechSynthesis.cancel()}catch(e){}document
 /* ============ cloud sync: Firebase Authentication + Realtime Database (REST, no SDK) ============ */
 /* Every record is stored separately (emds/c/<collection>/<id>) so several people can enter data at the same time.
    Each device keeps its own full copy (works offline) and syncs changes both ways. Newest change wins per record. */
-const FB_DEFAULT={apiKey:'',databaseURL:''};
+const FB_DEFAULT={apiKey:'AIzaSyBVPVKhDhBXRn4D7tUte6i0XQoBbwi4kW4',databaseURL:'https://enms-a526e-default-rtdb.asia-southeast1.firebasedatabase.app'};
 const CCOLL=['plants','equip','energy','diesel','prod','dieselRecv','dieselAdj','dieselDips','bills','mreads','ptot'];
 const CDOCS=['settings','stock','mtargets','rates','areas','etypes','sample','meter','tariff'];
 const SV={'.sv':'timestamp'};
