@@ -233,6 +233,10 @@ body.locked{background:var(--bg)}
 .lglogo .lgbox i{font-size:44px;color:#0b1730;padding:10px}
 .lgkeep{display:flex!important;align-items:center;gap:9px;margin:14px 0 0!important;font-size:13px!important;font-weight:500!important;color:#b6c4da!important;cursor:pointer}
 .lgkeep input{width:18px;height:18px;accent-color:#22d3ee;margin:0;flex:none}
+
+/* sidebar brand: wide logos fit inside a white card */
+.brand .logo.has{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;height:auto;padding:8px 12px;border-radius:14px;background:#fff;box-shadow:0 6px 22px rgba(0,0,0,.28)}
+.brand .logo.has img{width:100%;height:auto;max-height:72px;object-fit:contain;border-radius:0;display:block}
 </style>
 </head>
 <body>
@@ -2544,7 +2548,7 @@ const Cloud={
      <form class="lgcard" onsubmit="Cloud.doLogin(event)" autocomplete="on">
       <div class="lglogo"><div class="lgbox">${logo}</div></div>
       <h2 class="lgco">${nm}</h2>
-      <div class="lgsub">Energy &amp; Diesel Management System</div>
+      <div class="lgsub">Energy Management System</div>
       <div class="lgline"></div>
       <label for="lg_e">Email</label>
       <div class="lgf"><i class="fa-solid fa-envelope"></i><input id="lg_e" type="email" autocomplete="username" inputmode="email" placeholder="you@company.com" required value="${esc((this.auth&&this.auth.email)||localStorage.getItem('emds_lastEmail')||'')}"></div>
