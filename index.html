@@ -1204,11 +1204,106 @@ function saveAlertCfg(ev){ev.preventDefault();const f=ev.target.elements,o={};fo
 function resetAlertCfg(){delete DB.settings.alert;save();toast('Defaults restored');render()}
 function acExport(){const r=getRange(),al=computeAlerts(r.f,r.to);if(!al.length){toast('No exceptions to export','info');return}const cn=Object.fromEntries(ALERT_CATS.map(c=>[c[0],c[1]]));dl(csvBlob([['Date','Severity','Check','Type','Plant','Equipment','Details'],...al.map(x=>[x.date,x.sev,cn[x.cat]||'',x.type,x.plant,x.equip,x.msg])]),`Alerts_${r.f}_to_${r.to}.csv`);toast('CSV exported')}
 
+/* ============ Premium exports (PDF + Excel) ============ */
+function brandCo(){const s=DB.settings||{};return(s.company&&s.company!=='Demo Industries Ltd.'?s.company:'')||DEF_COMPANY}
+function brandLogo(){const s=DB.settings||{};if(s.logo&&s.logoW)return{src:s.logo,type:s.logoT||'PNG',w:s.logoW,h:s.logoH};
+  try{const b=atob(DEF_LOGO.split(',')[1].slice(0,60)),u=i=>((b.charCodeAt(i)<<24)|(b.charCodeAt(i+1)<<16)|(b.charCodeAt(i+2)<<8)|b.charCodeAt(i+3))>>>0;const w=u(16),h=u(20);return w>0&&h>0?{src:DEF_LOGO,type:'PNG',w,h}:null}catch(e){return null}}
+function genStamp(){const n=new Date();return fd(today())+' '+pad(n.getHours())+':'+pad(n.getMinutes())}
+const isoD=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v);
+/* ---- PDF building blocks ---- */
+function pdfHead(doc,title,sub,compact){const W=doc.internal.pageSize.getWidth(),co=brandCo(),L=brandLogo(),s=DB.settings,H=compact?80:92,lh=compact?44:52;
+  doc.setFillColor(8,20,45);doc.rect(0,0,W,H,'F');doc.setFillColor(8,145,178);doc.rect(0,H,W,3.5,'F');
+  let x=30;
+  if(L){try{const w=Math.min(150,lh*L.w/L.h),hh=w*L.h/L.w,y0=(H-hh)/2;doc.setFillColor(255,255,255);doc.roundedRect(30,y0-6,w+14,hh+12,6,6,'F');doc.addImage(L.src,L.type,37,y0,w,hh);x=30+w+14+16}catch(e){x=30}}
+  doc.setFont(undefined,'bold');doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text(pdfTxt(co),x,compact?28:32,{maxWidth:W-x-150});
+  doc.setFontSize(11.5);doc.setTextColor(103,232,249);doc.text(pdfTxt(title),x,compact?45:50,{maxWidth:W-x-150});doc.setFont(undefined,'normal');
+  doc.setFontSize(8.5);doc.setTextColor(203,213,225);(sub||[]).slice(0,2).forEach((t,i)=>doc.text(pdfTxt(t),x,(compact?58:64)+i*11,{maxWidth:W-x-150}));
+  doc.setFontSize(7.5);doc.setTextColor(148,163,184);doc.text('GENERATED',W-30,compact?26:32,{align:'right'});
+  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.setTextColor(255,255,255);doc.text(genStamp(),W-30,compact?38:45,{align:'right'});doc.setFont(undefined,'normal');
+  doc.setFontSize(8);doc.setTextColor(148,163,184);doc.text(pdfTxt('By '+(s.user||'Admin')),W-30,compact?50:58,{align:'right'});
+  doc.setTextColor(0,0,0);return H+(compact?18:24)}
+function pdfFoot(doc,title){const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),pc=doc.getNumberOfPages(),co=pdfTxt(brandCo()),g=genStamp();
+  for(let i=1;i<=pc;i++){doc.setPage(i);doc.setDrawColor(14,116,144);doc.setLineWidth(.6);doc.line(30,H-30,W-30,H-30);doc.setFontSize(7.5);doc.setTextColor(100,116,139);
+    doc.text(co+'  |  '+pdfTxt(title),30,H-18);doc.text('Generated '+g,W/2,H-18,{align:'center'});doc.text('Page '+i+' of '+pc,W-30,H-18,{align:'right'})}
+  doc.setTextColor(0,0,0)}
+function pdfSec(doc,y,t){const H=doc.internal.pageSize.getHeight();if(y>H-110){doc.addPage();y=44}
+  doc.setFillColor(8,145,178);doc.rect(30,y-10,3.5,14,'F');doc.setFont(undefined,'bold');doc.setFontSize(11.5);doc.setTextColor(8,20,45);doc.text(pdfTxt(t),40,y+1);doc.setFont(undefined,'normal');doc.setTextColor(0,0,0);return y+10}
+function pdfTab(doc,y,head,body,o={}){o=o||{};const cv=v=>pdfTxt(v==null?'':isoD(v)?fd(v):typeof v==='number'?fmtN(v):v),B=body.map(r=>r.map(cv)),
+  num=head.map((h,c)=>{const col=B.map(r=>String(r[c]==null?'':r[c]).trim().replace(/^Rs\.\s?/,''));return col.some(t=>/\d/.test(t))&&col.every(t=>t===''||t==='-'||/^[-+]?[\d,]*\.?\d+(\s?[%A-Za-z\/.]{0,8})?$/.test(t))});
+  doc.autoTable({startY:y,head:[head.map(pdfTxt)],body:B,theme:'grid',tableLineColor:[219,228,236],tableLineWidth:.4,
+    styles:{fontSize:o.fs||8,cellPadding:o.pad||4,lineColor:[219,228,236],lineWidth:.4,textColor:[30,41,59],valign:'middle',overflow:'linebreak'},
+    headStyles:{fillColor:[14,116,144],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[243,248,251]},margin:{left:30,right:30,bottom:44},
+    columnStyles:o.boldFirst?{0:{fontStyle:'bold'}}:{},
+    didParseCell:d=>{const c=d.column.index;if(num[c])d.cell.styles.halign='right';
+      if(d.section==='body'){const t=String(d.cell.raw).toLowerCase();if(t==='critical'){d.cell.styles.textColor=[185,28,28];d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[254,226,226]}else if(t==='warning'){d.cell.styles.textColor=[180,83,9];d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[254,243,199]}
+        if(o.total&&d.row.index===B.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[226,238,245];d.cell.styles.textColor=[8,20,45]}}
+      if(o.didParseCell)o.didParseCell(d)}});
+  return doc.lastAutoTable.finalY+(o.gap===undefined?18:o.gap)}
+/* ---- Excel (styled, with logo) ---- */
+let _exl=null;
+function xlLoad(){if(window.ExcelJS)return Promise.resolve(window.ExcelJS);if(_exl)return _exl;
+  _exl=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';sc.onload=()=>window.ExcelJS?res(window.ExcelJS):rej(new Error('ExcelJS missing'));sc.onerror=()=>{_exl=null;rej(new Error('could not load'))};document.head.appendChild(sc);setTimeout(()=>rej(new Error('timeout')),25000)});return _exl}
+function xlBlocks(aoa){const segs=[];let cur=[];(aoa||[]).forEach(r=>{if(!r||!r.length||r.every(v=>v===''||v==null)){if(cur.length)segs.push(cur);cur=[]}else cur.push(r)});if(cur.length)segs.push(cur);
+  return segs.map((g,i)=>{if(i>0&&g.every(r=>r.length<=2))return{kv:g};if(g.length===1&&g[0].length===1&&i>0)return{note:String(g[0][0])};return{head:g[0],rows:g.slice(1)}})}
+async function xlSave(sheets,file,o){o=o||{};const E=await xlLoad(),wb=new E.Workbook(),co=brandCo(),L=brandLogo(),gen=genStamp(),user=DB.settings.user||'Admin';
+  wb.creator=co;wb.created=new Date();
+  const NAVY='FF08142D',TEAL='FF0E7490',ACC='FF0891B2',ZEB='FFF3F8FB',LINE='FFD5DEE6',TOT='FFE2EEF5',TABS=['FF0891B2','FF7C3AED','FF059669','FFD97706','FFDC2626','FF2563EB','FFDB2777','FF0D9488'];
+  const logoId=L?wb.addImage({base64:L.src,extension:L.type==='PNG'?'png':'jpeg'}):null;
+  const fill=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}}),bd=()=>{const b={style:'thin',color:{argb:LINE}};return{top:b,left:b,bottom:b,right:b}};
+  const cvt=v=>v===undefined||v===null?'':(!o.iso&&isoD(v))?fd(v):v,len=v=>typeof v==='number'?String(Math.round(v*100)/100).length+3:String(v).length;
+  const cover=o.cover?{name:'Cover',cover:true,blocks:[{kv:[['Report',o.title||'Report'],['Company',co],...(o.sub||[]).map(t=>{const i=t.indexOf(':');return i>0?[t.slice(0,i),t.slice(i+1).trim()]:['',t]}),['Generated',gen],['Generated by',user]]},{title:'Contents',link:true,head:['Sheet','Records'],rows:sheets.map(x=>[x.name,Math.max(0,(x.aoa?x.aoa.filter(r=>r&&r.length).length-1:(x.blocks||[]).reduce((n,b)=>n+(b.rows?b.rows.length:0),0)))])}]}:null;
+  const all=cover?[cover,...sheets]:sheets,names=new Set();
+  all.forEach((sh,si)=>{let nm=String(sh.name||'Sheet'+(si+1)).replace(/[\\\/?*\[\]:]/g,' ').slice(0,31);while(names.has(nm.toLowerCase()))nm=nm.slice(0,28)+'_'+si;names.add(nm.toLowerCase());sh._nm=nm;
+    const blocks=sh.blocks||xlBlocks(sh.aoa),ws=wb.addWorksheet(nm,{properties:{tabColor:{argb:TABS[si%TABS.length]}},views:[{showGridLines:false}]});
+    let N=6;blocks.forEach(b=>{N=Math.max(N,b.kv?3:b.head?b.head.length:1)});
+    const W=Array(N).fill(11);
+    blocks.forEach(b=>{if(b.head){b.head.forEach((h,c)=>{W[c]=Math.max(W[c],Math.min(44,String(h).length+3));});(b.rows||[]).forEach(r=>r.forEach((v,c)=>{if(c<N)W[c]=Math.max(W[c],Math.min(44,len(cvt(v))+2))}))}else if(b.kv){b.kv.forEach(r=>{W[0]=Math.max(W[0],Math.min(26,String(r[0]).length+3))})}});
+    ws.columns=W.map(w=>({width:w}));
+    const px=c=>W[c]*7+5;let k=0,acc=0;const lh=58,lw=L?Math.min(170,Math.round(lh*L.w/L.h)):0;if(L){while(k<N&&acc<lw+14){acc+=px(k);k++}}
+    const tc=k+1;for(let c=1;c<=N;c++){[1,2,3].forEach(r=>{ws.getCell(r,c).fill=fill(c<=k?'FFFFFFFF':NAVY)});ws.getCell(4,c).fill=fill(ACC)}
+    ws.getRow(1).height=27;ws.getRow(2).height=19;ws.getRow(3).height=19;ws.getRow(4).height=3;
+    if(L&&logoId!==null&&logoId!==undefined)ws.addImage(logoId,{tl:{col:0.12,row:0.18},ext:{width:lw,height:lh}});
+    const tl=sh.cover?(o.title||'Report'):(sh.title||(o.cover||o.multi?(o.title||'')+(o.title?'  -  ':'')+nm:(o.title||nm)));
+    const meta=[...(o.sub||[])].join('     |     ');
+    if(N>=tc+1)[1,2,3].forEach(r=>ws.mergeCells(r,tc,r,N));
+    let c1=ws.getCell(1,tc);c1.value=co;c1.font={name:'Calibri',size:19,bold:true,color:{argb:'FFFFFFFF'}};c1.alignment={vertical:'middle',horizontal:'left',indent:1};
+    let c2=ws.getCell(2,tc);c2.value=tl;c2.font={name:'Calibri',size:13,bold:true,color:{argb:'FF67E8F9'}};c2.alignment={vertical:'middle',horizontal:'left',indent:1};
+    let c3=ws.getCell(3,tc);c3.value=meta;c3.font={name:'Calibri',size:9,color:{argb:'FFCBD5E1'}};c3.alignment={vertical:'middle',horizontal:'left',indent:1};
+    ws.mergeCells(5,1,5,N);const g=ws.getCell(5,1);g.value='Generated: '+gen+'     |     By: '+user;g.font={name:'Calibri',size:9,italic:true,color:{argb:'FF64748B'}};g.alignment={horizontal:'right',vertical:'middle'};ws.getRow(5).height=15;ws.getRow(6).height=4;
+    let r=7,headRow=0,tabs=0,lastW=0;
+    blocks.forEach(b=>{
+      if(b.title){ws.mergeCells(r,1,r,N);const t=ws.getCell(r,1);t.value=b.title;t.font={name:'Calibri',size:12,bold:true,color:{argb:NAVY}};t.border={bottom:{style:'medium',color:{argb:ACC}}};ws.getRow(r).height=22;r++}
+      if(b.kv){b.kv.forEach(row=>{const a=ws.getCell(r,1),v=ws.getCell(r,2);a.value=String(row[0]);a.font={name:'Calibri',size:10,bold:true,color:{argb:NAVY}};a.fill=fill('FFEAF2F7');a.border=bd();a.alignment={vertical:'middle'};
+        v.value=cvt(row[1]);v.font={name:'Calibri',size:10,color:{argb:'FF1E293B'}};v.alignment={vertical:'middle',horizontal:'left',wrapText:true};if(N>2){ws.mergeCells(r,2,r,N)}ws.getRow(r).height=19;r++});r++;return}
+      if(b.note){ws.mergeCells(r,1,r,N);const t=ws.getCell(r,1);t.value=b.note;t.font={name:'Calibri',size:9,italic:true,color:{argb:'FF64748B'}};t.alignment={wrapText:true,vertical:'top'};ws.getRow(r).height=Math.max(16,Math.ceil(b.note.length/(N*9))*13);r+=2;return}
+      const hd=b.head,rows=b.rows||[],nc=hd.length;tabs++;
+      hd.forEach((h,c)=>{const cell=ws.getCell(r,c+1);cell.value=String(h);cell.font={name:'Calibri',size:10.5,bold:true,color:{argb:'FFFFFFFF'}};cell.fill=fill(TEAL);cell.border=bd();cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}});ws.getRow(r).height=25;if(tabs===1)headRow=r;lastW=nc;r++;
+      const fm=hd.map((h,c)=>{let dec=0,any=false;rows.forEach(x=>{const v=x[c];if(typeof v==='number'&&isFinite(v)){any=true;const d=(String(v).split('.')[1]||'').length;dec=Math.max(dec,Math.min(3,d))}});if(!any)return null;const base='#,##0'+(dec?'.'+'0'.repeat(dec):'');return /var|diff|change|adj|loss|gain/i.test(String(h))?base+';[Red]-'+base:base});
+      if(!rows.length){ws.mergeCells(r,1,r,nc||1);const e=ws.getCell(r,1);e.value='No records for this selection';e.font={name:'Calibri',size:10,italic:true,color:{argb:'FF64748B'}};e.alignment={horizontal:'center'};r++}
+      rows.forEach((row,ri)=>{const isTot=(b.totalLast&&ri===rows.length-1)||/^\s*(grand\s+)?total\b/i.test(String(row[0]==null?'':row[0]));
+        for(let c=0;c<nc;c++){const raw=row[c],v=cvt(raw),cell=ws.getCell(r,c+1);cell.value=v;const isNum=typeof v==='number'&&isFinite(v);
+          cell.font={name:'Calibri',size:10,bold:isTot,color:{argb:isTot?NAVY:'FF1E293B'}};cell.border=bd();
+          if(isTot){cell.fill=fill(TOT);cell.border={...bd(),top:{style:'medium',color:{argb:ACC}}}}else if(ri%2===1)cell.fill=fill(ZEB);
+          if(isNum){cell.alignment={horizontal:'right',vertical:'middle'};if(fm[c])cell.numFmt=fm[c]}
+          else{const t=String(v),dt=/^\d{2}-\d{2}-\d{4}$/.test(t);cell.alignment={vertical:'middle',horizontal:dt?'center':'left',wrapText:t.length>W[c]};
+            const lo=t.toLowerCase();if(lo==='critical'){cell.font={name:'Calibri',size:10,bold:true,color:{argb:'FFB91C1C'}};cell.fill=fill('FFFEE2E2');cell.alignment={vertical:'middle',horizontal:'center'}}else if(lo==='warning'){cell.font={name:'Calibri',size:10,bold:true,color:{argb:'FFB45309'}};cell.fill=fill('FFFEF3C7');cell.alignment={vertical:'middle',horizontal:'center'}}}
+          if(b.link&&c===0&&!isTot){cell.value={text:String(v),hyperlink:"#'"+String(v).replace(/'/g,"''")+"'!A1"};cell.font={name:'Calibri',size:10,underline:true,bold:true,color:{argb:'FF0E7490'}}}}
+        r++});
+      r++});
+    if(!sh.cover&&tabs===1&&headRow&&blocks.filter(b=>b.head).length===1){if(r-headRow>22)[{showGridLines:false,state:'frozen',xSplit:0,ySplit:headRow}];ws.autoFilter={from:{row:headRow,column:1},to:{row:headRow,column:lastW}};ws.pageSetup.printTitlesRow=headRow+':'+headRow}
+    const nt=ws.getCell(r,1);ws.mergeCells(r,1,r,N);nt.value='Prepared with the '+co+' Energy & Diesel Management System  |  '+gen;nt.font={name:'Calibri',size:8.5,italic:true,color:{argb:'FF94A3B8'}};nt.alignment={horizontal:'center'};
+    Object.assign(ws.pageSetup,{paperSize:9,orientation:N>7?'landscape':'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.4,right:.4,top:.5,bottom:.7,header:.3,footer:.3}});
+    ws.headerFooter={oddFooter:'&L&8'+co.replace(/&/g,'&&')+'&C&8Page &P of &N&R&8Generated '+gen};
+  });
+  const buf=await wb.xlsx.writeBuffer();dl(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),file)}
+function xlExport(sheets,file,o,fallback){toast('Preparing Excel…','info');
+  xlSave(sheets,file,o).then(()=>toast('Excel exported'),e=>{try{console.error(e)}catch(x){}toast('Styled Excel needs internet. A plain file was created.','warn');try{fallback&&fallback()}catch(x){}})}
+
 /* ---- reports ---- */
 function summaryRows(a){const n=a.days.length;return Object.values(a.plant).filter(pl=>!hasEq()||pl.in).map(pl=>{const tg=a.partial?0:pl.p.tKWh*n;return[pl.p.name,Math.round(pl.kwh),Math.round(tg),tg?+((pl.kwh-tg)/tg*100).toFixed(1):'',Math.round(pl.l),+pl.prod.toFixed(1),pl.prod&&pl.kwh?+(pl.kwh/pl.prod).toFixed(1):'',Math.round(pl.ec),Math.round(pl.dc),Math.round(pl.ec+pl.dc),tg?Math.round(pl.kwh-tg):'']})}
 function filterText(){const PL=plMap(),o=[];if(F.plant)o.push('Plant: '+(PL[F.plant]?.name||''));if(F.area)o.push('Area: '+F.area);if(F.etype)o.push('Type: '+F.etype);if(F.equip)o.push('Equipment: '+(EQM[F.equip]?.name||''));if(F.shift)o.push('Shift '+F.shift);return o.length?o.join(' | '):'All plants, areas, equipment, shifts'}
 function exportXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
-  const r=getRange(),a=agg(r),PL=plMap(),wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),P=pu();
+  const r=getRange(),a=agg(r),PL=plMap(),wb=XLSX.utils.book_new(),SH=[],add=(n,rows)=>{XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);SH.push({name:n,aoa:rows})},P=pu();
   add('Summary',[['Plant','Energy kWh','Target kWh','Variance %','Diesel L','Production '+P.n,'SEC '+secU(),'Electricity Cost','Diesel Cost','Total Cost','Variance kWh'],...summaryRows(a),[],['Filters',filterText()],['Period',r.f+' to '+r.to],['Overall SEC',+a.sec.toFixed(2)],['Diesel specific (L/'+P.p+')',+a.dsc.toFixed(3)],['Overall efficiency %',+a.eff.toFixed(1)]]);
   add('Plant Totals',[['Date','Plant','Plant total kWh','Meter start','Meter end','Remarks'],...(DB.ptot||[]).map(x=>[x.date,PL[x.plant]?.name,x.kwh,x.mS??'',x.mE??'',x.remarks||''])]);
   add('Energy',[['Date','Shift','Plant','Area','Type','Equipment','Meter Start','Meter End','kWh','Hours','Rate','Cost','Remarks'],...a.E.map(x=>[x.date,shDisp(x.shift),PL[x.plant]?.name,EQM[x.equip]?.area,EQM[x.equip]?.etype,EQM[x.equip]?.name,x.meterStart??'',x.meterEnd??'',x.kwh,x.hours,x.rate||DB.settings.tariff,Math.round(x.kwh*(x.rate||DB.settings.tariff)),x.remarks||''])]);
@@ -1221,7 +1316,7 @@ function exportXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loa
   add('Cost - Equipment',[['Equipment','Plant','Type','Energy Cost','Diesel Cost','Total Cost','Share %','Cost per kWh'],...costEquipRows(a).map(x=>[x.name,x.plant,x.type,Math.round(x.ec),Math.round(x.dc),Math.round(x.tot),+x.share.toFixed(1),x.cpk===null?'':+x.cpk.toFixed(2)])]);
   {const kc=kpiCalc(a);add('KPIs',[['KPI','Value','Unit'],...KPI_DEFS().map(d=>[d.l,kc[d.k]===null?'':+kc[d.k].toFixed(d.dec),d.u])])}
   add('Alerts',[['Date','Severity','Type','Plant','Equipment','Details'],...computeAlerts(r.f,r.to).map(x=>[x.date,x.sev,x.type,x.plant,x.equip,x.msg])]);
-  XLSX.writeFile(wb,`Energy_Diesel_Report_${r.f}_to_${r.to}.xlsx`);toast('Excel exported')}
+  const fn=`Energy_Diesel_Report_${r.f}_to_${r.to}.xlsx`;xlExport(SH,fn,{cover:true,title:'Energy & Diesel Management Report',sub:['Period: '+fd(r.f)+' to '+fd(r.to),'Filters: '+filterText()]},()=>{XLSX.writeFile(wb,fn)})}
 function pickFile(){const f=$('#file');f.value='';f.accept='';f.onchange=()=>{const x=f.files[0];if(!x)return;/\.json$/i.test(x.name)?importJSON(x):impLoad(x)};f.click()}
 function toYmd(v){if(v instanceof Date&&!isNaN(v))return ymd(new Date(v.getTime()+6*36e5));
   if(typeof v==='number'){const d=new Date(Math.round((v-25569)*864e5));return`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}
@@ -1229,20 +1324,20 @@ function toYmd(v){if(v instanceof Date&&!isNaN(v))return ymd(new Date(v.getTime(
 function exportPDF(){
   if(!window.jspdf){toast('PDF library not loaded (check internet)','err');return}
   const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'}),r=getRange(),a=agg(r),s=DB.settings,W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),R='Rs.',m=n=>R+fmt(n),P=pu(),pr=prevRange(r),pv=agg(pr);
-  doc.setFillColor(8,20,45);doc.rect(0,0,W,84,'F');logoPdf(doc,W,84);doc.setTextColor(255);doc.setFontSize(16);doc.text('Electrical Energy & Diesel Management Report',30,30);doc.setFontSize(9);doc.text(`${s.company}  |  ${r.f} to ${r.to}  |  Generated ${new Date().toLocaleString('en-IN')}`,30,50);doc.text('Filters: '+filterText(),30,66);doc.setTextColor(0);
-  let y=104;const tbl=(head,body,opt={})=>{doc.autoTable({startY:y,head:[head],body,styles:{fontSize:8,cellPadding:4},headStyles:{fillColor:[14,116,144]},margin:{left:30,right:30},...opt});y=doc.lastAutoTable.finalY+18};
-  const h=t=>{if(y>H-90){doc.addPage();y=40}doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text(t,30,y);doc.setFont(undefined,'normal');y+=8};
+  let y=pdfHead(doc,'Energy & Diesel Management Report',['Period: '+fd(r.f)+' to '+fd(r.to),'Filters: '+filterText()]);
+  const tbl=(head,body,opt={})=>{y=pdfTab(doc,y,head,body,{boldFirst:true,...opt})};
+  const h=t=>{y=pdfSec(doc,y,t)};
   const ch=(c,p)=>p?((c-p)/p*100>=0?'+':'')+((c-p)/p*100).toFixed(1)+'% vs '+pr.label:'-';
   h('Key Performance Indicators');
-  tbl(['Indicator','Value','Change'],[['Total energy consumption',fmt(a.kwh)+' kWh',ch(a.kwh,pv.kwh)],['Total diesel consumption',fmt(a.litres)+' L',ch(a.litres,pv.litres)],['Total energy cost',m(a.ecost),ch(a.ecost,pv.ecost)],['Total diesel cost',m(a.dcost),ch(a.dcost,pv.dcost)],['Total production',fmt(a.prodTot,1)+' '+P.n,ch(a.prodTot,pv.prodTot)],['Specific energy consumption',a.sec?a.sec.toFixed(1)+' '+secU():'-',ch(a.sec,pv.sec)],['Diesel specific consumption',a.dsc?a.dsc.toFixed(3)+' L/'+P.p:'-',ch(a.dsc,pv.dsc)],['Overall energy efficiency',a.eff?a.eff.toFixed(1)+' %':'-','Target SEC / actual SEC'],['DG efficiency',a.dgL?(a.dgK/a.dgL).toFixed(2)+' kWh/L':'-',''],['CO2 emission',a.co2.toFixed(1)+' t',ch(a.co2,pv.co2)]],{columnStyles:{0:{fontStyle:'bold'}}});
+  tbl(['Indicator','Value','Change'],[['Total energy consumption',fmt(a.kwh)+' kWh',ch(a.kwh,pv.kwh)],['Total diesel consumption',fmt(a.litres)+' L',ch(a.litres,pv.litres)],['Total energy cost',m(a.ecost),ch(a.ecost,pv.ecost)],['Total diesel cost',m(a.dcost),ch(a.dcost,pv.dcost)],['Total production',fmt(a.prodTot,1)+' '+P.n,ch(a.prodTot,pv.prodTot)],['Specific energy consumption',a.sec?a.sec.toFixed(1)+' '+secU():'-',ch(a.sec,pv.sec)],['Diesel specific consumption',a.dsc?a.dsc.toFixed(3)+' L/'+P.p:'-',ch(a.dsc,pv.dsc)],['Overall energy efficiency',a.eff?a.eff.toFixed(1)+' %':'-','Target SEC / actual SEC'],['DG efficiency',a.dgL?(a.dgK/a.dgL).toFixed(2)+' kWh/L':'-',''],['CO2 emission',a.co2.toFixed(1)+' t',ch(a.co2,pv.co2)]],{});
   try{if(typeof Chart!=='undefined'){const cv=document.createElement('canvas');cv.width=760;cv.height=260;const tk={color:'#334155'};const sets=[{label:'Actual kWh',data:a.days.map(d=>a.dKwh[d]),backgroundColor:'#0891b2'}];if(!a.partial&&a.tDay)sets.push({type:'line',label:'Target kWh',data:a.days.map(()=>a.tDay),borderColor:'#d97706',borderDash:[6,4],pointRadius:0});
     const c=new Chart(cv,{type:'bar',data:{labels:a.days.map(lbl),datasets:sets},options:{animation:false,responsive:false,devicePixelRatio:2,color:'#334155',plugins:{legend:{labels:{color:'#334155'}}},scales:{x:{ticks:{...tk,maxTicksLimit:12},grid:{display:false}},y:{ticks:tk,beginAtZero:true}}}});
     const img=c.toBase64Image('image/png',1);c.destroy();if(y>H-230){doc.addPage();y=40}h('Daily Electrical Consumption');doc.addImage(img,'PNG',30,y,W-60,(W-60)*260/760);y+=(W-60)*260/760+18}}catch(e){}
   h('Plant-wise Performance');tbl(['Plant','kWh','Target','Var %','Diesel L',P.n,'SEC','Elec cost','Diesel cost','Total'],summaryRows(a).map(x=>[x[0],fmt(x[1]),x[2]?fmt(x[2]):'-',x[3]===''?'-':x[3],fmt(x[4]),fmt(x[5],1),x[6]||'-',m(x[7]),m(x[8]),m(x[9])]));
   if(shiftData(a)){h('Shift-wise');tbl(['Shift','Energy kWh','Diesel L'],shList(a).map(x=>[shLab(x),fmt(a.shift[x].kwh),fmt(a.shift[x].l)]))}
   h('Equipment-wise Consumption');tbl(['Equipment','Area','Type','kWh','Share','Run hrs','Cost'],Object.entries(a.eq).sort((x,y)=>y[1].kwh-x[1].kwh).map(([id,q])=>[EQM[id]?.name||'-',EQM[id]?.area||'-',EQM[id]?.etype||'-',fmt(q.kwh),(a.kwh?q.kwh/a.kwh*100:0).toFixed(1)+'%',fmt(q.h,1),m(q.ec)]));
-  const al=computeAlerts(r.f,r.to).slice(0,25);if(al.length){h('Abnormalities (latest 25)');tbl(['Date','Severity','Type','Plant','Equipment','Details'],al.map(x=>[x.date,x.sev,x.type,x.plant,x.equip,x.msg]),{styles:{fontSize:7,cellPadding:3},headStyles:{fillColor:[185,28,28]}})}
-  const pc=doc.getNumberOfPages();for(let i=1;i<=pc;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`EMDS • Page ${i}/${pc}`,W-30,H-16,{align:'right'})}
+  const al=computeAlerts(r.f,r.to).slice(0,25);if(al.length){h('Abnormalities (latest 25)');tbl(['Date','Severity','Type','Plant','Equipment','Details'],al.map(x=>[x.date,x.sev,x.type,x.plant,x.equip,x.msg]),{fs:7,pad:3,boldFirst:false})}
+  pdfFoot(doc,'Energy & Diesel Management Report');
   doc.save(`Energy_Diesel_Report_${r.f}_to_${r.to}.pdf`);toast('PDF generated')}
 
 /* ---- settings ---- */
@@ -1712,7 +1807,7 @@ function dtExport(kind){const cols=DT_COLS(),rows=dtRows();if(!rows.length){toas
   const name=`Energy_Data_${getRange().f}_to_${getRange().to}`;
   if(kind==='csv'){dl(csvBlob([head,...body]),name+'.csv');toast('CSV exported ('+rows.length+' rows)');return}
   if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
-  const ws=XLSX.utils.aoa_to_sheet([head,...body]);ws['!cols']=head.map(h=>({wch:Math.max(11,h.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Energy Data');XLSX.writeFile(wb,name+'.xlsx');toast('Excel exported ('+rows.length+' rows)')}
+  const rg=getRange();xlExport([{name:'Energy Data',aoa:[head,...body]}],name+'.xlsx',{title:'Energy Data Records',sub:['Period: '+fd(rg.f)+' to '+fd(rg.to),'Filters: '+filterText(),rows.length+' records']},()=>{const ws=XLSX.utils.aoa_to_sheet([head,...body]);ws['!cols']=head.map(h=>({wch:Math.max(11,h.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Energy Data');XLSX.writeFile(wb,name+'.xlsx')})}
 function renderData(){
   if(!DB.plants.length)return pageTitle('Energy Data','')+noPlants();
   DTC=dtBuild();const T=S.dt,r=getRange();
@@ -1966,26 +2061,26 @@ const repName=k=>(REPORTS.find(x=>x.k===k)||{}).n||'Report';
 const fmtN=v=>typeof v!=='number'?String(v==null?'':v):Number.isInteger(v)?fmt(v,0):fmt(v,Math.abs(v)<1?3:Math.abs(v)<100?2:1);
 const pdfTxt=s=>String(s).replace(/₹/g,'Rs.').replace(/[≈~]/g,'~').replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/[•·]/g,'-').replace(/[−–]/g,'-').replace(/[^\x20-\x7E -ÿ—]/g,'');
 function repCell(v){if(typeof v==='string'&&/^(Good|Warning|Critical)$/.test(v))return`<span class="chip ${v==='Good'?'g':v==='Warning'?'a':'r'}">${v}</span>`;return typeof v==='number'?fmtN(v):esc(v)}
-function repMeta(r){const s=DB.settings;return[s.company+(s.loc?' - '+s.loc:''),`Period: ${r.f} to ${r.to}`,'Filters: '+filterText(),'Generated: '+new Date().toLocaleString('en-IN')+' by '+s.user]}
+function repMeta(r){const s=DB.settings;return[brandCo()+(s.loc?' - '+s.loc:''),`Period: ${fd(r.f)} to ${fd(r.to)}`,'Filters: '+filterText(),'Generated: '+genStamp()+' by '+(s.user||'Admin')]}
 function repTableHtml(sec,limit){const rows=limit?sec.rows.slice(0,limit):sec.rows,txt=v=>typeof v==='number';
   return`<div class="tw"><table class="rt"><thead><tr>${sec.head.map((h,i)=>`<th${i&&sec.rows.length&&txt(sec.rows[0][i])?' class="n"':''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr>${x.map((v,i)=>`<td class="${txt(v)?'n':''}"${typeof v==='string'&&v.length>40?' style="white-space:normal;min-width:240px"':''}>${repCell(v)}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${sec.head.length}" class="empty">No data for this period / filter</td></tr>`}${sec.total?`<tr style="font-weight:700">${sec.total.map((v,i)=>`<td class="${txt(v)?'n':''}">${repCell(v)}</td>`).join('')}</tr>`:''}</tbody></table></div>${limit&&sec.rows.length>limit?`<p style="color:var(--muted);font-size:12px;margin-top:8px">Showing first ${limit} of ${fmt(sec.rows.length)} rows — export for the full report.</p>`:''}`}
 function repPreview(k){S.rep=k;render();setTimeout(()=>{const el=document.getElementById('repPrev');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})},60)}
 function repClose(){S.rep='';render()}
 function repExportXLSX(k){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
-  const r=getRange(),rep=repBuild(k,r),aoa=[[repName(k)],...repMeta(r).map(x=>[x]),[]];
+  const r=getRange(),rep=repBuild(k,r),meta=repMeta(r),aoa=[[repName(k)],...meta.map(x=>[x]),[]];
   rep.sections.forEach(s=>{if(rep.sections.length>1)aoa.push([s.title]);aoa.push(s.head);s.rows.forEach(x=>aoa.push(x));if(s.total)aoa.push(s.total);aoa.push([])});
   if(rep.note)aoa.push(['Note: '+rep.note]);
-  const ws=XLSX.utils.aoa_to_sheet(aoa),wd=Math.max(...rep.sections.map(s=>s.head.length),1);ws['!cols']=Array.from({length:wd},(_,i)=>({wch:Math.min(48,Math.max(12,...rep.sections.map(s=>String(s.head[i]||'').length+2)))}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,repName(k).replace(/[\\\/?*\[\]:]/g,'').slice(0,31));XLSX.writeFile(wb,`${repName(k).replace(/\s+/g,'_')}_${r.f}_to_${r.to}.xlsx`);toast('Excel exported')}
+  const fn=`${repName(k).replace(/\s+/g,'_')}_${r.f}_to_${r.to}.xlsx`,blocks=[];
+  rep.sections.forEach(s=>{blocks.push({title:rep.sections.length>1?s.title:'',head:s.head,rows:s.total?[...s.rows,s.total]:s.rows,totalLast:!!s.total})});if(rep.note)blocks.push({note:'Note: '+rep.note});
+  xlExport([{name:repName(k),title:repName(k),blocks}],fn,{title:repName(k),sub:[meta[1],meta[2]]},()=>{const ws=XLSX.utils.aoa_to_sheet(aoa),wd=Math.max(...rep.sections.map(s=>s.head.length),1);ws['!cols']=Array.from({length:wd},(_,i)=>({wch:Math.min(48,Math.max(12,...rep.sections.map(s=>String(s.head[i]||'').length+2)))}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,repName(k).replace(/[\\\/?*\[\]:]/g,'').slice(0,31));XLSX.writeFile(wb,fn)})}
 function repExportPDF(k){if(!window.jspdf){toast('PDF library not loaded (check internet)','err');return}
   const r=getRange(),rep=repBuild(k,r),wide=rep.sections.some(s=>s.head.length>8),{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4',orientation:wide?'landscape':'portrait'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),meta=repMeta(r);
-  doc.setFillColor(8,20,45);doc.rect(0,0,W,78,'F');logoPdf(doc,W,78);doc.setTextColor(255);doc.setFontSize(16);doc.text(pdfTxt(repName(k)),30,28);doc.setFontSize(8.5);doc.text(pdfTxt(meta[0]+'  |  '+meta[1]),30,45);doc.text(pdfTxt(meta[2]),30,58);doc.text(pdfTxt(meta[3]),30,70);doc.setTextColor(0);
-  let y=96;
-  rep.sections.forEach(s=>{if(rep.sections.length>1){if(y>H-90){doc.addPage();y=40}doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text(pdfTxt(s.title),30,y);doc.setFont(undefined,'normal');y+=8}
-    const body=s.rows.map(x=>x.map(v=>pdfTxt(fmtN(v))));if(s.total)body.push(s.total.map(v=>pdfTxt(fmtN(v))));
-    doc.autoTable({startY:y,head:[s.head.map(pdfTxt)],body,styles:{fontSize:s.head.length>10?6.5:7.5,cellPadding:3},headStyles:{fillColor:[14,116,144]},margin:{left:30,right:30},didParseCell:d=>{if(s.total&&d.section==='body'&&d.row.index===body.length-1)d.cell.styles.fontStyle='bold'}});y=doc.lastAutoTable.finalY+16});
-  if(rep.note){if(y>H-50){doc.addPage();y=40}doc.setFontSize(8);doc.setTextColor(90);doc.text(doc.splitTextToSize(pdfTxt('Note: '+rep.note),W-60),30,y);doc.setTextColor(0)}
-  const pc=doc.getNumberOfPages();for(let i=1;i<=pc;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`EMDS - ${pdfTxt(repName(k))} - Page ${i}/${pc}`,W-30,H-14,{align:'right'})}
+  let y=pdfHead(doc,repName(k),[meta[1],meta[2]]);
+  rep.sections.forEach(s=>{if(rep.sections.length>1)y=pdfSec(doc,y,s.title);
+    const body=s.rows.map(x=>x.slice());if(s.total)body.push(s.total);
+    y=pdfTab(doc,y,s.head,body,{fs:s.head.length>10?6.5:7.5,pad:3,total:!!s.total,boldFirst:true,gap:16})});
+  if(rep.note){if(y>H-60){doc.addPage();y=44}doc.setFontSize(8);doc.setTextColor(90,100,115);doc.text(doc.splitTextToSize(pdfTxt('Note: '+rep.note),W-60),30,y);doc.setTextColor(0,0,0)}
+  pdfFoot(doc,repName(k));
   doc.save(`${repName(k).replace(/\s+/g,'_')}_${r.f}_to_${r.to}.pdf`);toast('PDF generated')}
 function repPrint(k){const r=getRange(),rep=repBuild(k,r),meta=repMeta(r);let el=document.getElementById('printArea');if(!el){el=document.createElement('div');el.id='printArea';document.body.appendChild(el)}
   el.innerHTML=`${logoImg('plogo')}<h1>${esc(repName(k))}</h1><p>${meta.map(esc).join('<br>')}</p>`+rep.sections.map(s=>(rep.sections.length>1?`<h2>${esc(s.title)}</h2>`:'')+repTableHtml(s,0)).join('')+(rep.note?`<p><i>Note: ${esc(rep.note)}</i></p>`:'');
@@ -2016,14 +2111,14 @@ function dateRange(d){const ds=[...(d.energy||[]),...(d.diesel||[])].map(x=>x.da
 function exportJSON(quiet){DB.settings.lastBackup=new Date().toISOString();save();dl(new Blob([JSON.stringify({...DB,_meta:{app:'EMDS',exported:DB.settings.lastBackup,company:DB.settings.company,counts:statsOf(DB)}},null,1)],{type:'application/json'}),`EMDS_backup_${today()}_${new Date().toTimeString().slice(0,5).replace(':','')}.json`);if(!quiet){toast('JSON backup downloaded');if(S.view==='backup')render()}}
 function objRows(arr,map){const keys=[];arr.forEach(o=>Object.keys(o).forEach(k=>{if(!keys.includes(k))keys.push(k)}));return[keys.concat(map?map.map(m=>m[0]):[]),...arr.map(o=>keys.map(k=>k==='photo'?(o[k]?'Yes':''):o[k]===undefined||o[k]===null?'':typeof o[k]==='object'?JSON.stringify(o[k]):o[k]).concat(map?map.map(m=>m[1](o)):[]))]}
 function exportAllXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
-  const wb=XLSX.utils.book_new(),PL=plMap(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows.length?rows:[['(no data)']]),n),pn=o=>PL[o.plant]?.name||'',en=o=>EQM[o.equip]?.name||'';
+  const wb=XLSX.utils.book_new(),SH=[],PL=plMap(),add=(n,rows)=>{const rr=rows.length?rows:[['(no data)']];XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rr),n);SH.push({name:n,aoa:rr})},pn=o=>PL[o.plant]?.name||'',en=o=>EQM[o.equip]?.name||'';
   add('Plants',objRows(DB.plants));add('Equipment',objRows(DB.equip,[['plantName',pn]]));add('Energy',objRows(DB.energy,[['plantName',pn],['equipName',en]]));add('Diesel',objRows(DB.diesel,[['plantName',pn],['equipName',en]]));add('Production',objRows(DB.prod,[['plantName',pn]]));
   add('Diesel Received',objRows(DB.dieselRecv||[]));add('Diesel Adjustments',objRows(DB.dieselAdj||[]));add('Diesel Dips',objRows(DB.dieselDips||[]));add('Electricity Bills',objRows(DB.bills||[]));add('Incomer Readings',objRows(DB.mreads||[]));
   add('Monthly Targets',[['Plant','Month','kWh','Diesel L','SEC','Production'],...Object.entries(DB.mtargets||{}).map(([k,v])=>{const[p,m]=k.split('|');return[PL[p]?.name||p,m,v.kwh??'',v.diesel??'',v.sec??'',v.prod??'']})]);
   add('Energy Rates',objRows(DB.rates?DB.rates.e:[]));add('Diesel Rates',objRows(DB.rates?DB.rates.d:[]));add('Areas',[['Area'],...allAreas().map(a=>[a])]);
   add('Stock Setup',[['Opening stock (L)','Opening date','Reorder level (L)','Tank capacity (L)'],[DB.stock?.opening??'',DB.stock?.date??'',DB.stock?.reorder??'',DB.stock?.capacity??'']]);
   add('Settings',[['Setting','Value'],...Object.entries(DB.settings).map(([k,v])=>[k,typeof v==='object'?JSON.stringify(v):v])]);
-  XLSX.writeFile(wb,`EMDS_all_data_${today()}.xlsx`);toast('All data exported to Excel')}
+  const fn=`EMDS_all_data_${today()}.xlsx`;xlExport(SH,fn,{cover:true,iso:true,title:'Complete Data Export',sub:['Scope: all records in the app','Records: '+DB.energy.length+' energy, '+DB.diesel.length+' diesel']},()=>{XLSX.writeFile(wb,fn)})}
 function parseBackup(txt,file){let d;try{d=JSON.parse(txt)}catch(e){throw new Error('the file is not valid JSON')}
   if(!d||typeof d!=='object'||Array.isArray(d)||!Array.isArray(d.plants)||!d.settings||typeof d.settings!=='object')throw new Error('this is not an EMDS backup (plants / settings missing)');
   for(const k of['equip','energy','diesel','prod','dieselRecv','dieselAdj','dieselDips','bills'])if(d[k]!==undefined&&!Array.isArray(d[k]))throw new Error(`"${k}" is corrupted`);
@@ -2377,9 +2472,9 @@ function mgmtPDF(mo){if(!window.jspdf){toast('PDF library not loaded (check inte
   const f=mo+'-01',to=mo+'-'+pad(dim(mo)),r={f,to},t=today(),cut=to>t?t:to;
   withF({},()=>{const a=agg({f,to:cut}),pm=(()=>{const y=+mo.slice(0,4),m=+mo.slice(5),py=m===1?y-1:y,pmm=m===1?12:m-1,pmo=py+'-'+pad(pmm);return pmo})(),pa=agg({f:pm+'-01',to:pm+'-'+pad(Math.min(dim(pm),+cut.slice(8,10)))}),P=pu(),s=DB.settings;
     const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),m=n=>'Rs.'+fmt(n),X=pdfTxt,ch=(c,p)=>p?((c-p)/p*100>=0?'+':'')+((c-p)/p*100).toFixed(1)+'%':'-';
-    doc.setFillColor(8,20,45);doc.rect(0,0,W,70,'F');logoPdf(doc,W,70);doc.setTextColor(255);doc.setFontSize(15);doc.text('Monthly Energy & Diesel Report',30,28);doc.setFontSize(9);doc.text(X(`${s.company}  |  ${MN[+mo.slice(5)-1]} ${mo.slice(0,4)}${cut<to?' (till '+fd(cut)+')':''}`),30,46);doc.text(X('Generated '+fd(t)+'  |  compared with the same days of the previous month'),30,60);doc.setTextColor(0);
-    let y=84;const sec=(tt)=>{doc.setFontSize(10.5);doc.setFont(undefined,'bold');doc.setTextColor(14,116,144);doc.text(X(tt),30,y);doc.setTextColor(0);doc.setFont(undefined,'normal');y+=5};
-    const tbl=(head,body,o={})=>{doc.autoTable({startY:y,head:[head.map(X)],body:body.map(r=>r.map(X)),styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[14,116,144]},margin:{left:30,right:30},theme:'grid',...o});y=doc.lastAutoTable.finalY+14};
+    let y=pdfHead(doc,'Plant Head Report - '+MN[+mo.slice(5)-1]+' '+mo.slice(0,4)+(cut<to?' (till '+fd(cut)+')':''),['Compared with the same days of the previous month'],true);
+    const sec=(tt)=>{y=pdfSec(doc,y,tt)};
+    const tbl=(head,body,o={})=>{y=pdfTab(doc,y,head,body,{pad:2.8,gap:10,boldFirst:true,...o})};
     sec('1. Key figures');tbl(['Indicator','This month','Previous','Change'],[['Energy (kWh)',fmt(a.kwh),fmt(pa.kwh),ch(a.kwh,pa.kwh)],['Diesel (L)',fmt(a.litres),fmt(pa.litres),ch(a.litres,pa.litres)],['Energy cost',m(a.ecost),m(pa.ecost),ch(a.ecost,pa.ecost)],['Diesel cost',m(a.dcost),m(pa.dcost),ch(a.dcost,pa.dcost)],['Total cost',m(a.ecost+a.dcost),m(pa.ecost+pa.dcost),ch(a.ecost+a.dcost,pa.ecost+pa.dcost)],['Production ('+P.n+')',fmt(a.prodTot,1),fmt(pa.prodTot,1),ch(a.prodTot,pa.prodTot)],['SEC ('+secU()+')',a.sec?a.sec.toFixed(1):'-',pa.sec?pa.sec.toFixed(1):'-',ch(a.sec,pa.sec)],['DG efficiency (kWh/L)',a.dgL?(a.dgK/a.dgL).toFixed(2):'-',pa.dgL?(pa.dgK/pa.dgL).toFixed(2):'-','']],{columnStyles:{0:{fontStyle:'bold'}}});
     sec('2. Plant-wise vs target');const n=a.days.length;tbl(['Plant','kWh','Target kWh','Var %','Diesel L','Cost',P.n+' / SEC'],Object.values(a.plant).map(pl=>{const tg=(+pl.p.tKWh||0)*n;return[pl.p.name,fmt(pl.kwh),tg?fmt(tg):'-',tg?((pl.kwh-tg)/tg*100).toFixed(1)+'%':'-',fmt(pl.l),m(pl.ec+pl.dc),pl.prod?fmt(pl.prod,1)+' / '+(pl.kwh/pl.prod).toFixed(1):'-']}),{didParseCell:d=>{if(d.section==='body'&&d.column.index===3&&/^\d/.test(d.cell.raw)&&parseFloat(d.cell.raw)>5)d.cell.styles.textColor=[185,28,28]}});
     sec('3. Top 5 equipment by energy');tbl(['Equipment','Area','kWh','Share','Run hrs'],Object.entries(a.eq).sort((x,z)=>z[1].kwh-x[1].kwh).slice(0,5).map(([id,q])=>[EQM[id]?.name||'-',EQM[id]?.area||'-',fmt(q.kwh),(a.kwh?q.kwh/a.kwh*100:0).toFixed(1)+'%',fmt(q.h,1)]));
@@ -2387,7 +2482,7 @@ function mgmtPDF(mo){if(!window.jspdf){toast('PDF library not loaded (check inte
     if(w){const mr=billMeter(mo,'');tbl(['Item','Value'],[['Meter energy ('+(meterCfg().basis==='kvah'?'kVAh basis':'kWh')+')',fmt(meterCfg().basis==='kvah'?w.per.kvah:w.per.kwh)],['Power factor',w.pf===null?'-':w.pf.toFixed(3)+(w.pct?'  (penalty '+w.pct+'% of energy charges, about '+m(w.pfAmt)+')':'  (no penalty)')],['Max demand / contract',w.cd?fmt(w.md,1)+' / '+fmt(w.cd,0)+' kVA ('+(w.mdPct||0).toFixed(0)+'%)'+(w.mdOver>0?'  ABOVE contract, extra about '+m(w.mdExtra):''):fmt(w.md,1)+' kVA'],['Bill compare',bl?'Billed '+fmt(bl.units)+' vs recorded '+fmt(mr)+' units':'No bill entered for this month']],{columnStyles:{0:{fontStyle:'bold',cellWidth:150}}})}else{doc.setFontSize(9);doc.text('No meter readings for this month.',30,y+12);y+=26}
     const al=computeAlerts(f,cut,false),cr=al.filter(x=>x.sev==='critical').length,g=gapScan(f,to);sec('5. Alerts and data quality');
     tbl(['Item','Status'],[['Critical alerts',String(cr)],['Warnings',String(al.length-cr)],['Data completeness',g.pct+'%  ('+g.missing+' missing entries)']].concat(al.filter(x=>x.sev==='critical').slice(0,3).map(x=>['Critical: '+x.type,fd(x.date)+' - '+x.msg])),{columnStyles:{0:{fontStyle:'bold',cellWidth:150}},styles:{fontSize:8,cellPadding:3,overflow:'linebreak'}});
-    doc.setFontSize(7.5);doc.setTextColor(120);doc.text(X('Prepared by '+(s.user||'Plant Admin')+' - '+s.company),30,H-18);doc.text('Page 1',W-30,H-18,{align:'right'});
+    pdfFoot(doc,'Plant Head Report');
     doc.save(`Plant_Head_Report_${mo}.pdf`);try{meMark(mo,'report')}catch(e){}toast('One-page report created')})}
 
 /* ============ Data Hub: everything from one place ============ */
