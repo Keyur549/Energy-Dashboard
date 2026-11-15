@@ -3251,9 +3251,9 @@ function billCalc(per,M,T){const L=[],add=(k,l,d,a)=>L.push({k,l,d,a:Math.round(
   let pf=per.kvah>0?Math.min(1,per.kwh/per.kvah):null,pfAdj=0;
   if(pf!==null){const p=pf*100;
     if(p<90){let pct=Math.ceil(Math.min(90-p,5));if(p<85)pct+=2*Math.ceil(85-p);pfAdj=ec*pct/100;add('p','Power factor penalty',`PF ${pf.toFixed(3)} → ${pct}% of energy charges`,pfAdj)}
-    else if(p>95){const pct=0.5*Math.ceil(p-95);pfAdj=-ec*pct/100;add('p','Power factor rebate',`PF ${pf.toFixed(3)} → ${pct}% of energy charges`,pfAdj)}}
+    else if(p>95){const p3=Math.floor(pf*1000)/10,pct=Math.round(0.5*(p3-95)*100)/100;pfAdj=-ec*pct/100;add('p','Power factor rebate',`PF ${(p3/100).toFixed(3)} → ${pct}% of energy charges (0.5% for every 1% above 0.95)`,pfAdj)}}
   const vr=VOLT_REB[M.volt]||0;if(vr)add('v','Voltage rebate',`${vr}% of energy charges (${M.volt} kV supply)`,-ec*vr/100);
-  const fp=units*T.fppas,fs=fp*T.fppasSur/100;add('f','FPPAS',`${fmt(units,0)} units × ₹${T.fppas}`,fp);if(T.fppasSur)add('f','FPPAS surcharge',`${T.fppasSur}% of FPPAS`,fs);
+  const fp=units*T.fppas,fs=(dc+ec+fp)*T.fppasSur/100;add('f','Base fuel charge',`${fmt(units,0)} units × ₹${T.fppas}`,fp);if(T.fppasSur)add('f','Variable FPPAS',`${T.fppasSur}% of demand + energy + base fuel charges (${fmt(dc+ec+fp,2)})`,fs);
   const sub=L.reduce((s,x)=>s+x.a,0),du=sub*T.duty/100;add('u','Electricity duty',`${T.duty}% of the charges above`,du);if(T.other)add('o','Other charges',`as entered`,T.other);
   const total=Math.round((sub+du+(T.other||0))*100)/100;return{L,total,units,basisV,bd,md,cd,pf,pfAdj,rate,dc,ec,perUnit:total/(per.kwh||units)}}
 function renderMeter(){
@@ -3301,7 +3301,7 @@ function renderMeter(){
     <div style="grid-column:1/-1"><label>Energy charge — billing demand up to kVA (0 = rest) and paise per unit</label>${tr(T.eSlabs,'e')}</div>
     <div style="grid-column:1/-1"><label>Peak-hour charge — billing demand up to kVA and paise per unit</label>${tr(T.touPk,'t')}</div>
     <div><label>11–17 h discount (paise/unit)</label>${num('touOff',T.touOff)}</div><div><label>FPPAS (₹ per unit)</label>${num('fppas',T.fppas)}</div>
-    <div><label>FPPAS surcharge (% of FPPAS)</label>${num('fppasSur',T.fppasSur)}</div><div><label>Electricity duty (%)</label>${num('duty',T.duty)}</div>
+    <div><label>Variable FPPAS (% of demand + energy + fuel charges)</label>${num('fppasSur',T.fppasSur)}</div><div><label>Electricity duty (%)</label>${num('duty',T.duty)}</div>
     <div><label>Other charges per bill (${cur()})</label>${num('other',T.other)}</div><div></div>
     <div class="acts" style="grid-column:1/-1"><button class="btn grn"><i class="fa-solid fa-floppy-disk"></i>Save tariff</button><button type="button" class="btn sec" onclick="tariffReset()">Reset to FY 2026-27 values</button></div></form></details>`}
 function mrTemplate(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
