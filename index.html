@@ -1595,7 +1595,7 @@ function impValidate(){
     v.mS=mS;v.mE=mE;v.kwh=kwh;v.hours=num.hours;v.litres=num.litres;v.prod=num.prod;v.eRate=num.eRate;v.dRate=num.dRate;
     // required by kind
     if(kind==='energy'){if(kwh===null&&!issues.some(x=>x.l==='error'&&/Energy|Meter/.test(x.m)))err('Energy (kWh) is missing — provide Energy or both meter readings');if(num.litres>0)warn('Diesel value ignored — equipment is electrical')}
-    else{if(!(num.litres>0))err('Diesel (L) is missing or zero for diesel equipment')}
+    else{if(!(num.litres>0)){if(num.kwh>0||num.hours>0)warn('Diesel litres not entered: kWh generated / hours are saved with 0 litres');else err('Diesel (L), kWh generated and hours are all missing or zero for diesel equipment')}}
     if(v.hours===null&&mapped('hours')){warn('Running hours missing')}
     else if(v.hours!==null){if(v.hours>24)err('Running hours exceed 24');else if(v.hours>8&&v.shift!=='D'&&mapped('shift'))warn('Running hours exceed one 8-hour shift')}
     if(num.eRate===0)warn('Energy rate is 0 — default tariff will be used');if(num.dRate===0)warn('Diesel rate is 0 — default rate will be used');
@@ -1631,7 +1631,7 @@ function impCommit(){
       if(!eq){eq={id:uid(),plant:pl.id,name:v.equip,kw:0,type:v.kind==='diesel'?'diesel':'electrical',area:v.area||'General',etype:v.etype,capUnit:v.kind==='diesel'?'kVA':'kW',remarks:'',code:nextCode()};DB.equip.push(eq);EQK[ek]=eq;stats.equip++}
       if(r.dup&&r.dup.t==='db'&&I.dup==='overwrite'){DB.energy=DB.energy.filter(x=>x.id!==r.dup.id);DB.diesel=DB.diesel.filter(x=>x.id!==r.dup.id);stats.over++}
       const m=v.mS!==null&&v.mE!==null?{meterStart:v.mS,meterEnd:v.mE}:{};
-      if(v.kind==='diesel'){DB.diesel.push({id:uid(),date:v.date,plant:pl.id,equip:eq.id,shift:v.shift,litres:v.litres,rate:v.dRate>0?v.dRate:rateOn('d',v.date),hours:v.hours||0,kwhGen:v.kwh||0,...m,remarks:v.remarks});stats.diesel++}
+      if(v.kind==='diesel'){DB.diesel.push({id:uid(),date:v.date,plant:pl.id,equip:eq.id,shift:v.shift,litres:v.litres||0,rate:v.dRate>0?v.dRate:rateOn('d',v.date),hours:v.hours||0,kwhGen:v.kwh||0,...m,remarks:v.remarks});stats.diesel++}
       else{DB.energy.push({id:uid(),date:v.date,plant:pl.id,equip:eq.id,shift:v.shift,kwh:v.kwh,hours:v.hours||0,rate:v.eRate>0?v.eRate:rateOn('e',v.date),...m,remarks:v.remarks});stats.energy++}
       if(v.prod!==null){upsertProd(v.date,pl.id,v.shift,v.prod);stats.prod++}
       if(v.date<stats.min)stats.min=v.date;if(v.date>stats.max)stats.max=v.date});
@@ -1732,7 +1732,7 @@ function gridLoad(wb,file){
     cols.forEach(c=>{const dg=/\bdg\b|diesel|generator/i.test(c.type||''),mf=(Number(E[3]&&E[3][c.j])>0?Number(E[3][c.j]):1);let hrs=num(Hh,c);
     if(hmode==='meter'&&!dg&&hrs!==null){const pv=hprev[c.j];hprev[c.j]=hrs;if(pv===undefined){hrs=null;st.hbase=(st.hbase||0)+1}else if(hrs>=pv)hrs=+(hrs-pv).toFixed(3);else if(hrs<pv*.5){st.hreset=(st.hreset||0)+1;if(hrs>24){hrs=null;st.hbad=(st.hbad||0)+1}}else{hrs=null;st.hneg=(st.hneg||0)+1}
       if(hrs!==null&&hrs>24){if(hrs>72){hrs=null;st.hbad=(st.hbad||0)+1}else{hrs=24;st.hcap=(st.hcap||0)+1}}}
-    const raw=num(E,c);if(raw===null)return;const val=+(raw*uf*mf).toFixed(6),lit=num(Dl,c);let mS='',mE='',kwh='',rm='';
+    const raw=num(E,c);if(raw===null)return;const val=+(raw*uf*mf).toFixed(6),lit=num(Dl,c);if(dg&&!(raw>0)&&!(lit>0)&&!(hrs>0))return;let mS='',mE='',kwh='',rm='';
       if(mode==='meter'&&!dg){let pv=prev[c.j];if(pv===undefined)pv=lm(c);prev[c.j]=val;if(pv===null||pv===undefined){st.base++;return}if(val>=pv){mS=pv;mE=val}else if(val<pv*.5){kwh=val;rm='Meter reset: new reading used as the day kWh';st.reset=(st.reset||0)+1}else{st.neg=(st.neg||0)+1;return}}else kwh=val;
       let prodV='';const pj=plC[c.plant.toLowerCase()];if(pj!==undefined&&!prodTaken.has(c.plant.toLowerCase())){const pr=Pr[r]?pn(Pr[r][pj]):{e:1};if(!pr.e&&!pr.bad){prodV=pr.v;prodTaken.add(c.plant.toLowerCase())}}
       out.push([d.v,'',c.plant,'',c.equip,c.type,mS,mE,kwh,hrs===null?'':hrs,lit===null?'':lit,prodV,'','',rm])});
