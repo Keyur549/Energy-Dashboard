@@ -681,6 +681,7 @@ function renderDash(){
    `<div class="kpi glass" style="--c:${achC}"><div class="ic"><i class="fa-solid fa-bullseye"></i></div><div class="lb">Target Achievement</div><div class="v"><span data-count="${ach}" data-dec="1">0</span><small>% of target</small></div>${a.partial?'<span class="dl n">n/a with shift / equipment filter</span>':`<span class="dl n">${fmt(a.kwh)} / ${fmt(a.tPeriod)} kWh</span><div class="bar"><i style="width:${Math.min(100,ach)}%"></i></div>`}</div>`,
    kpi('fa-coins','Total Energy + Diesel Cost',tot,0,'','var(--violet)',d(tot,ptot,true),cur()),
    kpi('fa-triangle-exclamation','Abnormalities',al.length,0,'found',al.some(x=>x.sev==='critical')?'var(--red)':'var(--amber)',`<span class="dl n">${al.filter(x=>x.sev==='critical').length} critical • ${al.filter(x=>x.sev!=='critical').length} warning</span>`),
+   kpi('fa-bolt-lightning','DG Generation',a.dgK,0,'kWh','#f59e0b',`<span class="dl n">${a.dgK?'DG running '+fmt(a.D.reduce((s,x)=>s+(x.kwhGen>0?(x.hours||0):0),0),1)+' h • not in Total Energy':'No DG generation in period'}</span>`),
    kpi('fa-engine','DG Efficiency',dgE,2,'kWh/L','#f472b6',`<span class="dl ${!dgE?'n':dgE>=2.8?'g':'b'}">${dgE?(dgE>=2.8?'Healthy':'Below 2.8 limit'):'No DG data'}</span>`),
    kpi('fa-smog','CO₂ Emission',a.co2,1,'tCO₂','#2dd4bf',d(a.co2,pv.co2,true))].join('');
   const plRows=Object.values(a.plant).filter(pl=>!eqF||pl.in).map(pl=>{const tg=a.partial?0:pl.p.tKWh*n,v=tg?(pl.kwh-tg)/tg*100:0,sec=pl.prod&&pl.kwh?pl.kwh/pl.prod:0;
@@ -809,6 +810,7 @@ function renderDiesel(){
     `<div class="kpi glass" style="--c:${vari===null?'var(--muted)':Math.abs(vari)>Math.max(50,close*.02)?'var(--red)':'var(--green)'}"><div class="ic"><i class="fa-solid fa-scale-unbalanced"></i></div><div class="lb">Diesel Variance</div><div class="v"><span data-count="${vari===null?0:vari}" data-dec="0">0</span><small>L</small></div>${tag}<span class="dl n">${vari===null?'No physical dip in period':'Physical '+fmt(lastDip.phys)+' L vs book on '+lbl(lastDip.date)}</span></div>`].join(''):'';
   const mainKpis=[
     kpi('fa-gas-pump','Total Diesel Consumption',a.litres,0,'Litres','var(--amber)',d(a.litres,pv.litres,true)),
+    kpi('fa-bolt-lightning','DG Generation (kWh)',a.dgK,0,'kWh','#f59e0b',`${tag}<span class="dl n">${a.dgK?(a.dgL?'Diesel linked: '+fmt(a.dgL,1)+' L':'Litres not entered'):'No DG generation in period'}</span>`),
     kpi('fa-indian-rupee-sign','Diesel Cost',a.dcost,0,'','#fb923c',d(a.dcost,pv.dcost,true),cur()),
     kpi('fa-tag','Average Price / Litre',avgP,2,cur()+'/L','var(--violet)',`${tag}<span class="dl n">Based on ${recLit?'purchases in period':'consumption records'}</span>`),
     kpi('fa-stopwatch','Diesel per Running Hour',perHr,1,'L/h','var(--acc)',`${tag}<span class="dl n">${fmt(hrs,1)} running hours</span>`),
