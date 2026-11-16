@@ -3086,17 +3086,17 @@ const Cloud={
     this.st.busy=true;this.st.s='syncing';this.ui();
     try{const rem=await this.req('GET','/emds/d',null,'&shallow=true');const empty=!rem||!Object.keys(rem).length;this.st.busy=false;
       const n=CCOLL.reduce((s,c)=>s+(DB[c]||[]).length,0);
-      if(empty){if(!this.canWrite()){this.st.s='ok';this.ui();return}
-        if(!DB.sample&&n>0){toast('Uploading your data to the cloud…');this.sync();return}
-        openModal({title:'Start cloud sync',ok:'Upload my data',fn:()=>this.sync(),html:`<p style="line-height:1.6">The cloud is empty. Your data (<b>${fmt(n)}</b> records${DB.sample?', including <b>sample data</b>':''}) will be uploaded so every device can use it.</p>${DB.sample?'<p style="color:var(--amber);font-size:13px">Tip: if you do not want the sample data in the cloud, delete it first in Settings.</p>':''}`})}
+      if(empty){if(!this.canWrite()){this.st.s='ok';this.ui();return}this._fsPend=1;
+        if(!DB.sample&&n>0){toast('Uploading your data to the cloud…');this.sync({force:true});return}
+        openModal({title:'Start cloud sync',ok:'Upload my data',fn:()=>{this._fsPend=0;this.sync({force:true})},html:`<p style="line-height:1.6">The cloud is empty. Your data (<b>${fmt(n)}</b> records${DB.sample?', including <b>sample data</b>':''}) will be uploaded so every device can use it.</p>${DB.sample?'<p style="color:var(--amber);font-size:13px">Tip: if you do not want the sample data in the cloud, delete it first in Settings.</p>':''}`})}
       else if(DB.sample||n===0){toast('Loading your saved data from the cloud…');this.joinReplace()}
-      else openModal({title:'Cloud already has data',ok:'Use cloud data',fn:()=>this.joinReplace(),html:`<p style="line-height:1.6">Other devices have already saved data in the cloud.</p><p style="line-height:1.6"><b>Use cloud data</b> replaces the data on this device with the cloud copy (recommended).</p><div class="acts" style="margin-top:8px"><button type="button" class="btn sec" onclick="closeModal();Cloud.joinMerge()">Keep this device's data too (merge)</button></div>`})
+      else{this._fsPend=1;openModal({title:'Cloud already has data',ok:'Use cloud data',fn:()=>{this._fsPend=0;this.joinReplace()},html:`<p style="line-height:1.6">Other devices have already saved data in the cloud.</p><p style="line-height:1.6"><b>Use cloud data</b> replaces the data on this device with the cloud copy (recommended).</p><div class="acts" style="margin-top:8px"><button type="button" class="btn sec" onclick="closeModal();Cloud._fsPend=0;Cloud.joinMerge()">Keep this device's data too (merge)</button></div>`})}
     }catch(e){this.st.busy=false;this.st.s='error';this.st.err=e.message;this.ui()}},
   async joinReplace(){const bak=CCOLL.map(c=>DB[c]),bm=this.meta;CCOLL.forEach(c=>DB[c]=[]);this.meta={c:{},d:{},lp:{}};await this.sync({full:true,noPush:true});if(this.st.s!=='ok'){CCOLL.forEach((c,i)=>DB[c]=bak[i]);this.meta=bm;toast('Could not load the cloud data. Your data on this device is unchanged.','err')}},
   async reupload(){if(!this.canWrite()){toast('Your role cannot upload data','err');return}this.meta={c:{},d:{},lp:{}};await this.sync({full:true});this.after(1);toast(this.st.s==='ok'?'All data uploaded to the cloud':'Upload failed: '+(this.st.err||'check internet'),this.st.s==='ok'?'':'err')},
   async joinMerge(){this.meta={c:{},d:{},lp:{}};await this.sync({full:true});this.after(1)},
   after(ch){if(ch){try{LocalAdapter.save(DB)}catch(e){}ensureMaster();softRender()}},
-  async sync(o={}){if(this.st.busy||!this.auth||!this.cfg())return;this.st.busy=true;this.st.s='syncing';this.ui();let ch=0;
+  async sync(o={}){if(this.st.busy||!this.auth||!this.cfg())return;if(!o.force&&!o.full&&!Object.keys(this.meta.c).length&&!Object.keys(this.meta.d).length){if(!this._fsPend)return this.firstSync();return}this.st.busy=true;this.st.s='syncing';this.ui();let ch=0;
     try{if(!o.noPush&&this.canWrite())await this.push();ch=await this.pull(!!o.full);this.st.s='ok';this.st.last=Date.now();this.st.err=''}
     catch(e){this.st.s=(navigator.onLine===false||/Failed to fetch|NetworkError|Load failed|internet/i.test(e.message))?'offline':'error';this.st.err=e.message}
     finally{this.st.busy=false;this.saveMeta();this.ui()}
@@ -3105,10 +3105,17 @@ const Cloud={
     for(const c of CCOLL){const seen=new Set();
       for(const r of DB[c]||[]){if(!r||!r.id)continue;const k=c+'/'+r.id;seen.add(k);const h=hh(r),m=meta.c[k];if(!m||m[0]!==h)list.push({p:'c/'+k,v:{...JSON.parse(JSON.stringify(r)),_u:SV},t:'c',k,h})}
       for(const k of Object.keys(meta.c)){if(k.startsWith(c+'/')&&!seen.has(k)&&meta.c[k][0]!=='D')list.push({p:'c/'+k,v:{_d:1,_u:SV},t:'c',k,h:'D'})}}
+    await this.keepBrand();
     for(const n of CDOCS){const h=hh(DB[n]),m=meta.d[n];if(!m||m[0]!==h)list.push({p:'d/'+n,v:{v:DB[n]===undefined?null:JSON.parse(JSON.stringify(DB[n])),_u:SV},t:'d',k:n,h})}
     for(let i=0;i<list.length;i+=200){const ch=list.slice(i,i+200),body={};ch.forEach(x=>body[x.p]=x.v);
       await this.req('PATCH','/emds',body);ch.forEach(x=>{(x.t==='c'?meta.c:meta.d)[x.k]=[x.h,0]})}
     return list.length},
+  isDemo(st){return !st||!st.company||st.company==='Demo Industries Ltd.'||st.company==='Your Plant / Company Name'},
+  async keepBrand(){const st=DB.settings||(DB.settings={});if(!this.isDemo(st)&&st.logo)return;
+    try{const r=await this.req('GET','/emds/d/settings');const rs=r&&r.v;if(!rs||this.isDemo(rs)&&!rs.logo)return;
+      if(this.isDemo(st)&&!this.isDemo(rs)){st.company=rs.company;if(rs.loc!==undefined)st.loc=rs.loc;if(rs.appName)st.appName=rs.appName}
+      if(!st.logo&&rs.logo)['logo','logoW','logoH','logoT'].forEach(k=>{if(rs[k]!==undefined)st[k]=rs[k]});
+      try{LocalAdapter.save(DB)}catch(e){}}catch(e){}},
   docVal(n,v){if(v!==undefined&&v!==null)return v;return (n==='mtargets'||n==='locks')?{}:n==='rates'?{e:[],d:[]}:n==='sample'?false:(n==='areas'||n==='etypes')?[]:v},
   async pull(full){let ch=0;const meta=this.meta;
     const d=await this.req('GET','/emds/d');
