@@ -638,7 +638,7 @@ function tick(){const n=new Date();$('#clkT').textContent=n.toLocaleTimeString('
 function header(){const s=DB.settings;$('#coName').textContent=s.company+(s.loc?' • '+s.loc:'');const at=$('#appTitle');if(at)at.textContent=s.appName||'Electrical Energy & Diesel Management System';document.title=(s.appName||'Electrical Energy & Diesel Management System');const hl=$('#hLogo');if(hl){hl.innerHTML=s.logo?`<img alt="" src="${s.logo}">`:'';hl.classList.toggle('has',!!s.logo)}const bl=$('.brand .logo');if(bl&&bl.classList){bl.innerHTML=s.logo?`<img alt="" src="${s.logo}">`:'<i class="fa-solid fa-bolt"></i>';bl.classList.toggle('has',!!s.logo)}
   const un=Cloud.auth&&Cloud.auth.name||s.user;$('#uName').textContent=un;$('#uRole').textContent=Cloud.auth&&Cloud.auth.role?Cloud.auth.role:s.role;$('#avt').textContent=(un||'U')[0].toUpperCase();
   const t=today(),al=computeAlerts(addDays(t,-6),t,false).length;['#bell','#bell2'].forEach(q=>{const e=$(q);if(e){e.style.display=al?'grid':'none';e.textContent=al>99?'99+':al}});
-  const kb=((JSON.stringify(DB).length)/1024).toFixed(0);$('#storeInfo').textContent=`${DB.energy.length+DB.diesel.length} records • ${kb} KB`}
+  const kb=((JSON.stringify(DB).length)/1024).toFixed(0);$('#storeInfo').textContent=`${DB.energy.length+DB.diesel.length} records • ${kb} KB • ${APP_BUILD.split(' • ')[0]}`}
 function togglePop(ev){ev.stopPropagation();const p=$('#pop');if(p.classList.toggle('show')){const t=today(),al=computeAlerts(addDays(t,-6),t,false).slice(0,6);
   p.innerHTML=`<h4><i class="fa-regular fa-bell"></i> Last 7 days</h4>`+(al.length?al.map(a=>`<div class="pi"><span class="chip ${a.sev==='critical'?'r':'a'}">${a.sev}</span> <b>${esc(a.type)}</b><small>${esc(a.plant)} • ${esc(a.equip)} • ${fd(a.date)}<br>${esc(a.msg)}</small></div>`).join('')+`<div style="margin-top:10px"><button class="btn sm" onclick="go('alerts')">View all alerts</button></div>`:'<div class="pi">No abnormalities 🎉</div>')}}
 document.addEventListener('click',e=>{if(!e.target.closest('#pop'))$('#pop').classList.remove('show')});
@@ -762,7 +762,7 @@ function renderDashSimple(){
   <div class="glass card"><h3><i class="fa-solid fa-chart-column"></i>Daily Energy<span class="r">kWh</span></h3><div class="cbox"><canvas id="cTrend"></canvas></div></div>
   <div class="glass card" style="margin-top:14px"><h3><i class="fa-solid fa-table"></i>Plants</h3><div class="tw"><table><thead><tr><th>Plant</th><th class="n">kWh</th><th class="n">Diesel L</th><th class="n">Cost</th></tr></thead><tbody>${pl}</tbody></table></div></div>
   <div class="glass card" style="margin-top:14px"><h3><i class="fa-solid fa-bell"></i>Problems<span class="r">${al.length?`${crit} critical • ${al.length-crit} warning • `:''}<a class="lnk" onclick="go('alerts')">View all</a></span></h3>${alHtml}</div>
-  <div style="text-align:center;margin:16px 0"><button class="btn sec" onclick="dashMode(1)"><i class="fa-solid fa-table-columns"></i>Full dashboard (more charts, filters)</button></div>`}
+  <div style="text-align:center;margin:16px 0 4px"><button class="btn sec" onclick="dashMode(1)"><i class="fa-solid fa-table-columns"></i>Full dashboard (more charts, filters)</button></div><div style="text-align:center;font-size:11.5px;color:var(--muted);margin-bottom:10px">App version ${APP_BUILD}</div>`}
 function dashSimpleCharts(a){
   if(typeof Chart==='undefined'){document.querySelectorAll('.cbox').forEach(c=>c.innerHTML='<div class="empty">Chart.js could not load. Check internet connection.</div>');return}
   chartBase();const days=a.days,L=days.map(lbl);
@@ -1724,7 +1724,7 @@ function exportTemplate(kind){
   const ins=[['Column','Required','Description','Example'],['Date','Yes','YYYY-MM-DD (also DD/MM/YYYY, DD-Mon-YYYY or an Excel date). Not in the future.','2026-11-07'],['Shift','No','A, B, C (1/2/3 also accepted) or Full day (for one reading per 24 hours). Blank = default chosen on import.','A'],['Plant','Yes','Plant name. Unknown plants are created.',p],['Area','No','Area / department. Used for new equipment.','Furnace Bay'],['Equipment','Yes','Equipment name or ID. Unknown equipment is created.','Induction Furnace 1'],['Equipment Type','No','DG Set, Transformer, Motor, Pump, Compressor, Boiler, Furnace, HVAC, Chiller, Other','Furnace'],['Meter Start / Meter End','No','Both or none. Energy = End − Start when Energy is blank.','50000 / 51200'],['Energy (kWh)','Electrical: yes*','Energy consumed. For a DG set this is kWh generated. *Not needed if both meters are given.','1200'],['Running Hours','No','0–24 (max 8 per shift when Shift is given).','8'],['Diesel (L)','Diesel equipment: yes','Litres of diesel consumed. Rows for diesel equipment (DG set, forklift…) are stored as diesel records.','90'],['Production','No','Plant production for that date and shift.','25'],['Energy Rate','No','Per kWh. Blank = default tariff.',DB.settings.tariff],['Diesel Rate','No','Per litre. Blank = default diesel rate.',DB.settings.dieselRate],['Remarks','No','Up to 200 characters.','Note']];
   const w2=XLSX.utils.aoa_to_sheet(ins);w2['!cols']=[{wch:24},{wch:20},{wch:90},{wch:20}];XLSX.utils.book_append_sheet(wb,w2,'Instructions');XLSX.writeFile(wb,'Energy_Diesel_Import_Template.xlsx');toast('Template downloaded')}
 
-const APP_BUILD='16-Nov-2026 Simple-menu v7';
+const APP_BUILD='v8 • 16 Nov 2026';
 function renderImport(){
   return pageTitle('Excel Import','Upload .xlsx, .xls or .csv • columns are mapped automatically • review before anything is saved • Build: '+APP_BUILD,`<button class="btn sec" onclick="exportTemplate('xlsx')"><i class="fa-solid fa-file-excel"></i>Export Template</button><button class="btn sec hide-m" onclick="exportTemplate('csv')"><i class="fa-solid fa-file-csv"></i>CSV Template</button>`)+
   `<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-table-cells"></i>Daily grid — easiest way<span class="r"><span class="chip g">Date × Equipment</span></span></h3>
@@ -3467,6 +3467,7 @@ try{Cloud.loadState();if(Cloud.on()&&!Cloud.auth)document.body.classList.add('lo
 save();tick();setInterval(tick,1000);render();Cloud.boot();
 
 try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+try{setTimeout(()=>toast('App version '+APP_BUILD,'info'),1500)}catch(e){}
 try{setInterval(remTick,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)remTick()});setTimeout(remTick,4000)}catch(e){}
 </script>
 </body>
