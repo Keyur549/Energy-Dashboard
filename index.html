@@ -265,6 +265,13 @@ body.locked{background:var(--bg)}
 .fcl{font-size:11.5px;color:var(--muted);font-weight:600;display:flex;gap:6px;align-items:center}.fcl i{color:var(--acc)}
 .fcv{font-size:22px;font-weight:800;margin:4px 0 2px}.fcv small{font-size:12px;font-weight:600;color:var(--muted)}
 .fcs{font-size:11.5px;color:var(--muted)}
+
+/* Report Center: lighter, premium cards */
+.rc{border:1px solid var(--bd);background:var(--card2)}
+.rc .rci{background:linear-gradient(135deg,rgba(8,145,178,.13),rgba(37,99,235,.11));color:var(--acc2)}
+.rc .btn,.rc .btn.grn,.rc .btn.sec{background:var(--inp);color:var(--tx);border:1px solid var(--bd);box-shadow:none;font-weight:600}
+.rc .btn i{color:var(--acc2)}.rc .btn.grn i{color:var(--green)}.rc .btn.sec i{color:var(--red)}
+.rc .btn:active{background:var(--card)}
 </style>
 </head>
 <body>
@@ -1287,15 +1294,15 @@ function genStamp(){const n=new Date();return fd(today())+' '+pad(n.getHours())+
 const isoD=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v);
 /* ---- PDF building blocks ---- */
 function pdfHead(doc,title,sub,compact){const W=doc.internal.pageSize.getWidth(),co=brandCo(),L=brandLogo(),s=DB.settings,H=compact?80:92,lh=compact?44:52;
-  doc.setFillColor(8,20,45);doc.rect(0,0,W,H,'F');doc.setFillColor(8,145,178);doc.rect(0,H,W,3.5,'F');
+  doc.setFillColor(241,247,252);doc.rect(0,0,W,H,'F');doc.setFillColor(8,145,178);doc.rect(0,H,W,2.5,'F');
   let x=30;
-  if(L){try{const w=Math.min(150,lh*L.w/L.h),hh=w*L.h/L.w,y0=(H-hh)/2;doc.setFillColor(255,255,255);doc.roundedRect(30,y0-6,w+14,hh+12,6,6,'F');doc.addImage(L.src,L.type,37,y0,w,hh);x=30+w+14+16}catch(e){x=30}}
-  doc.setFont(undefined,'bold');doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text(pdfTxt(co),x,compact?28:32,{maxWidth:W-x-150});
-  doc.setFontSize(11.5);doc.setTextColor(103,232,249);doc.text(pdfTxt(title),x,compact?45:50,{maxWidth:W-x-150});doc.setFont(undefined,'normal');
-  doc.setFontSize(8.5);doc.setTextColor(203,213,225);(sub||[]).slice(0,2).forEach((t,i)=>doc.text(pdfTxt(t),x,(compact?58:64)+i*11,{maxWidth:W-x-150}));
-  doc.setFontSize(7.5);doc.setTextColor(148,163,184);doc.text('GENERATED',W-30,compact?26:32,{align:'right'});
-  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.setTextColor(255,255,255);doc.text(genStamp(),W-30,compact?38:45,{align:'right'});doc.setFont(undefined,'normal');
-  doc.setFontSize(8);doc.setTextColor(148,163,184);doc.text(pdfTxt('By '+(s.user||'Admin')),W-30,compact?50:58,{align:'right'});
+  if(L){try{const w=Math.min(150,lh*L.w/L.h),hh=w*L.h/L.w,y0=(H-hh)/2;doc.setFillColor(255,255,255);doc.setDrawColor(214,226,238);doc.roundedRect(30,y0-6,w+14,hh+12,6,6,'FD');doc.addImage(L.src,L.type,37,y0,w,hh);x=30+w+14+16}catch(e){x=30}}
+  doc.setFont(undefined,'bold');doc.setFontSize(15);doc.setTextColor(15,35,70);doc.text(pdfTxt(co),x,compact?28:32,{maxWidth:W-x-150});
+  doc.setFontSize(11.5);doc.setTextColor(14,116,144);doc.text(pdfTxt(title),x,compact?45:50,{maxWidth:W-x-150});doc.setFont(undefined,'normal');
+  doc.setFontSize(8.5);doc.setTextColor(88,105,130);(sub||[]).slice(0,2).forEach((t,i)=>doc.text(pdfTxt(t),x,(compact?58:64)+i*11,{maxWidth:W-x-150}));
+  doc.setFontSize(7.5);doc.setTextColor(120,135,158);doc.text('GENERATED',W-30,compact?26:32,{align:'right'});
+  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.setTextColor(15,35,70);doc.text(genStamp(),W-30,compact?38:45,{align:'right'});doc.setFont(undefined,'normal');
+  doc.setFontSize(8);doc.setTextColor(120,135,158);doc.text(pdfTxt('By '+(s.user||'Admin')),W-30,compact?50:58,{align:'right'});
   doc.setTextColor(0,0,0);return H+(compact?18:24)}
 function pdfFoot(doc,title){const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),pc=doc.getNumberOfPages(),co=pdfTxt(brandCo()),g=genStamp();
   for(let i=1;i<=pc;i++){doc.setPage(i);doc.setDrawColor(14,116,144);doc.setLineWidth(.6);doc.line(30,H-30,W-30,H-30);doc.setFontSize(7.5);doc.setTextColor(100,116,139);
@@ -1307,7 +1314,7 @@ function pdfTab(doc,y,head,body,o={}){o=o||{};const cv=v=>pdfTxt(v==null?'':isoD
   num=head.map((h,c)=>{const col=B.map(r=>String(r[c]==null?'':r[c]).trim().replace(/^Rs\.\s?/,''));return col.some(t=>/\d/.test(t))&&col.every(t=>t===''||t==='-'||/^[-+]?[\d,]*\.?\d+(\s?[%A-Za-z\/.]{0,8})?$/.test(t))});
   doc.autoTable({startY:y,head:[head.map(pdfTxt)],body:B,theme:'grid',tableLineColor:[219,228,236],tableLineWidth:.4,
     styles:{fontSize:o.fs||8,cellPadding:o.pad||4,lineColor:[219,228,236],lineWidth:.4,textColor:[30,41,59],valign:'middle',overflow:'linebreak'},
-    headStyles:{fillColor:[14,116,144],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[243,248,251]},margin:{left:30,right:30,bottom:44},
+    headStyles:{fillColor:[219,236,244],textColor:[10,45,75],fontStyle:'bold',lineColor:[190,214,228],lineWidth:.4},alternateRowStyles:{fillColor:[243,248,251]},margin:{left:30,right:30,bottom:44},
     columnStyles:o.boldFirst?{0:{fontStyle:'bold'}}:{},
     didParseCell:d=>{const c=d.column.index;if(num[c])d.cell.styles.halign='right';
       if(d.section==='body'){const t=String(d.cell.raw).toLowerCase();if(t==='critical'){d.cell.styles.textColor=[185,28,28];d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[254,226,226]}else if(t==='warning'){d.cell.styles.textColor=[180,83,9];d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[254,243,199]}
@@ -1335,15 +1342,15 @@ async function xlSave(sheets,file,o){o=o||{};const E=await xlLoad(),wb=new E.Wor
     blocks.forEach(b=>{if(b.head){b.head.forEach((h,c)=>{W[c]=Math.max(W[c],Math.min(44,String(h).length+3));});(b.rows||[]).forEach(r=>r.forEach((v,c)=>{if(c<N)W[c]=Math.max(W[c],Math.min(44,len(cvt(v))+2))}))}else if(b.kv){b.kv.forEach(r=>{W[0]=Math.max(W[0],Math.min(26,String(r[0]).length+3))})}});
     ws.columns=W.map(w=>({width:w}));
     const px=c=>W[c]*7+5;let k=0,acc=0;const lh=58,lw=L?Math.min(170,Math.round(lh*L.w/L.h)):0;if(L){while(k<N&&acc<lw+14){acc+=px(k);k++}}
-    const tc=k+1;for(let c=1;c<=N;c++){[1,2,3].forEach(r=>{ws.getCell(r,c).fill=fill(c<=k?'FFFFFFFF':NAVY)});ws.getCell(4,c).fill=fill(ACC)}
+    const tc=k+1;for(let c=1;c<=N;c++){[1,2,3].forEach(r=>{ws.getCell(r,c).fill=fill(c<=k?'FFFFFFFF':'FFF1F7FC')});ws.getCell(4,c).fill=fill(ACC)}
     ws.getRow(1).height=27;ws.getRow(2).height=19;ws.getRow(3).height=19;ws.getRow(4).height=3;
     if(L&&logoId!==null&&logoId!==undefined)ws.addImage(logoId,{tl:{col:0.12,row:0.18},ext:{width:lw,height:lh}});
     const tl=sh.cover?(o.title||'Report'):(sh.title||(o.cover||o.multi?(o.title||'')+(o.title?'  -  ':'')+nm:(o.title||nm)));
     const meta=[...(o.sub||[])].join('     |     ');
     if(N>=tc+1)[1,2,3].forEach(r=>ws.mergeCells(r,tc,r,N));
-    let c1=ws.getCell(1,tc);c1.value=co;c1.font={name:'Calibri',size:19,bold:true,color:{argb:'FFFFFFFF'}};c1.alignment={vertical:'middle',horizontal:'left',indent:1};
-    let c2=ws.getCell(2,tc);c2.value=tl;c2.font={name:'Calibri',size:13,bold:true,color:{argb:'FF67E8F9'}};c2.alignment={vertical:'middle',horizontal:'left',indent:1};
-    let c3=ws.getCell(3,tc);c3.value=meta;c3.font={name:'Calibri',size:9,color:{argb:'FFCBD5E1'}};c3.alignment={vertical:'middle',horizontal:'left',indent:1};
+    let c1=ws.getCell(1,tc);c1.value=co;c1.font={name:'Calibri',size:19,bold:true,color:{argb:'FF0F2346'}};c1.alignment={vertical:'middle',horizontal:'left',indent:1};
+    let c2=ws.getCell(2,tc);c2.value=tl;c2.font={name:'Calibri',size:13,bold:true,color:{argb:'FF0E7490'}};c2.alignment={vertical:'middle',horizontal:'left',indent:1};
+    let c3=ws.getCell(3,tc);c3.value=meta;c3.font={name:'Calibri',size:9,color:{argb:'FF586982'}};c3.alignment={vertical:'middle',horizontal:'left',indent:1};
     ws.mergeCells(5,1,5,N);const g=ws.getCell(5,1);g.value='Generated: '+gen+'     |     By: '+user;g.font={name:'Calibri',size:9,italic:true,color:{argb:'FF64748B'}};g.alignment={horizontal:'right',vertical:'middle'};ws.getRow(5).height=15;ws.getRow(6).height=4;
     let r=7,headRow=0,tabs=0,lastW=0;
     blocks.forEach(b=>{
@@ -1352,7 +1359,7 @@ async function xlSave(sheets,file,o){o=o||{};const E=await xlLoad(),wb=new E.Wor
         v.value=cvt(row[1]);v.font={name:'Calibri',size:10,color:{argb:'FF1E293B'}};v.alignment={vertical:'middle',horizontal:'left',wrapText:true};if(N>2){ws.mergeCells(r,2,r,N)}ws.getRow(r).height=19;r++});r++;return}
       if(b.note){ws.mergeCells(r,1,r,N);const t=ws.getCell(r,1);t.value=b.note;t.font={name:'Calibri',size:9,italic:true,color:{argb:'FF64748B'}};t.alignment={wrapText:true,vertical:'top'};ws.getRow(r).height=Math.max(16,Math.ceil(b.note.length/(N*9))*13);r+=2;return}
       const hd=b.head,rows=b.rows||[],nc=hd.length;tabs++;
-      hd.forEach((h,c)=>{const cell=ws.getCell(r,c+1);cell.value=String(h);cell.font={name:'Calibri',size:10.5,bold:true,color:{argb:'FFFFFFFF'}};cell.fill=fill(TEAL);cell.border=bd();cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}});ws.getRow(r).height=25;if(tabs===1)headRow=r;lastW=nc;r++;
+      hd.forEach((h,c)=>{const cell=ws.getCell(r,c+1);cell.value=String(h);cell.font={name:'Calibri',size:10.5,bold:true,color:{argb:'FF0A2D4B'}};cell.fill=fill('FFDBECF4');cell.border=bd();cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}});ws.getRow(r).height=25;if(tabs===1)headRow=r;lastW=nc;r++;
       const fm=hd.map((h,c)=>{let dec=0,any=false;rows.forEach(x=>{const v=x[c];if(typeof v==='number'&&isFinite(v)){any=true;const d=(String(v).split('.')[1]||'').length;dec=Math.max(dec,Math.min(3,d))}});if(!any)return null;const base='#,##0'+(dec?'.'+'0'.repeat(dec):'');return /var|diff|change|adj|loss|gain/i.test(String(h))?base+';[Red]-'+base:base});
       if(!rows.length){ws.mergeCells(r,1,r,nc||1);const e=ws.getCell(r,1);e.value='No records for this selection';e.font={name:'Calibri',size:10,italic:true,color:{argb:'FF64748B'}};e.alignment={horizontal:'center'};r++}
       rows.forEach((row,ri)=>{const isTot=(b.totalLast&&ri===rows.length-1)||/^\s*(grand\s+)?total\b/i.test(String(row[0]==null?'':row[0]));
@@ -1724,7 +1731,7 @@ function exportTemplate(kind){
   const ins=[['Column','Required','Description','Example'],['Date','Yes','YYYY-MM-DD (also DD/MM/YYYY, DD-Mon-YYYY or an Excel date). Not in the future.','2026-11-07'],['Shift','No','A, B, C (1/2/3 also accepted) or Full day (for one reading per 24 hours). Blank = default chosen on import.','A'],['Plant','Yes','Plant name. Unknown plants are created.',p],['Area','No','Area / department. Used for new equipment.','Furnace Bay'],['Equipment','Yes','Equipment name or ID. Unknown equipment is created.','Induction Furnace 1'],['Equipment Type','No','DG Set, Transformer, Motor, Pump, Compressor, Boiler, Furnace, HVAC, Chiller, Other','Furnace'],['Meter Start / Meter End','No','Both or none. Energy = End − Start when Energy is blank.','50000 / 51200'],['Energy (kWh)','Electrical: yes*','Energy consumed. For a DG set this is kWh generated. *Not needed if both meters are given.','1200'],['Running Hours','No','0–24 (max 8 per shift when Shift is given).','8'],['Diesel (L)','Diesel equipment: yes','Litres of diesel consumed. Rows for diesel equipment (DG set, forklift…) are stored as diesel records.','90'],['Production','No','Plant production for that date and shift.','25'],['Energy Rate','No','Per kWh. Blank = default tariff.',DB.settings.tariff],['Diesel Rate','No','Per litre. Blank = default diesel rate.',DB.settings.dieselRate],['Remarks','No','Up to 200 characters.','Note']];
   const w2=XLSX.utils.aoa_to_sheet(ins);w2['!cols']=[{wch:24},{wch:20},{wch:90},{wch:20}];XLSX.utils.book_append_sheet(wb,w2,'Instructions');XLSX.writeFile(wb,'Energy_Diesel_Import_Template.xlsx');toast('Template downloaded')}
 
-const APP_BUILD='v8 • 16 Nov 2026';
+const APP_BUILD='v9 • 16 Nov 2026';
 function renderImport(){
   return pageTitle('Excel Import','Upload .xlsx, .xls or .csv • columns are mapped automatically • review before anything is saved • Build: '+APP_BUILD,`<button class="btn sec" onclick="exportTemplate('xlsx')"><i class="fa-solid fa-file-excel"></i>Export Template</button><button class="btn sec hide-m" onclick="exportTemplate('csv')"><i class="fa-solid fa-file-csv"></i>CSV Template</button>`)+
   `<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-table-cells"></i>Daily grid — easiest way<span class="r"><span class="chip g">Date × Equipment</span></span></h3>
