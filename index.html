@@ -289,6 +289,11 @@ body.locked{background:var(--bg)}
 /* Equipment tag */
 .etag{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;color:#fff;font:800 15px/1 Inter,system-ui,sans-serif;margin-right:8px;vertical-align:middle;box-shadow:0 3px 8px rgba(0,0,0,.18);flex:none}
 .etag.big{width:42px;height:42px;border-radius:12px;font-size:24px;margin-right:12px}
+
+.qe{border:1px solid var(--line,rgba(128,128,128,.25));border-radius:14px;padding:10px 12px;margin:8px 0;background:rgba(128,128,128,.05)}
+.qe.bad{border-color:#ef4444;background:rgba(239,68,68,.08)}
+.qh{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px}.qlast{margin-left:auto;color:var(--muted)}
+.qf{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.qf label{font-size:12px}.qf input{width:100%;font-size:16px;padding:10px}
 </style>
 </head>
 <body>
@@ -1095,8 +1100,8 @@ function efFromRecord(x,kind){const e=EQM[x.equip],pr=DB.prod.find(p=>p.date===x
   const base={date:x.date,shift:x.shift||'A',plant:x.plant,area:e?e.area||'General':'',equip:x.equip,hours:x.hours||'',prod:pr?pr.tons:'',remarks:x.remarks||'',mStart:x.meterStart??'',mEnd:x.meterEnd??'',eRate:DB.settings.tariff,dRate:DB.settings.dieselRate,dStart:'',dEnd:'',litres:'',kwh:''};
   return kind==='diesel'?{...base,kwh:x.kwhGen||'',litres:x.litres,dStart:x.dStart??'',dEnd:x.dEnd??'',dRate:x.rate||DB.settings.dieselRate}:{...base,kwh:x.kwh,eRate:x.rate||DB.settings.tariff}}
 function findRec(id,kind){return(kind==='diesel'?DB.diesel:DB.energy).find(x=>x.id===id)}
-function efEdit(id,kind){const x=findRec(id,kind);if(!x)return;S.ef=efFromRecord(x,kind);S.efPhoto=x.photo||'';S.efId=id;S.view='entry';S.noCap=true;render();setTimeout(efScroll,60)}
-function efDup(id,kind){const x=findRec(id,kind);if(!x)return;const f=efFromRecord(x,kind),t=today(),nd=addDays(x.date,1);f.date=nd<=t?nd:x.date;
+function efEdit(id,kind){const x=findRec(id,kind);if(!x)return;S.efForceDetail=true;S.ef=efFromRecord(x,kind);S.efPhoto=x.photo||'';S.efId=id;S.view='entry';S.noCap=true;render();setTimeout(efScroll,60)}
+function efDup(id,kind){const x=findRec(id,kind);if(!x)return;S.efForceDetail=true;const f=efFromRecord(x,kind),t=today(),nd=addDays(x.date,1);f.date=nd<=t?nd:x.date;
   const kw=+f.kwh||0;if(f.mStart!==''&&f.mEnd!==''){f.mStart=f.mEnd;f.mEnd=+(+f.mStart+kw).toFixed(3)}
   if(kind==='diesel'&&f.dStart!==''&&f.dEnd!==''){const L=+f.litres;f.dStart=f.dEnd;f.dEnd=+(+f.dStart+L).toFixed(3)}
   S.ef=f;S.efPhoto='';S.efId='';S.view='entry';S.noCap=true;render();toast('Duplicated — adjust date/values, then click Add Record','info');setTimeout(efScroll,60)}
@@ -1105,7 +1110,65 @@ function efDelDo(id,kind){const o=findRec(id,kind);if(o&&lockBlocked(o.date))ret
 function efClear(){S.ef=null;S.efId='';S.efPhoto='';S.noCap=true;render();toast('Form cleared','info')}
 function efScroll(){const f=document.getElementById('efForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'})}
 
+function entryTab(){let t='';try{t=localStorage.getItem('ems_entrytab')||''}catch(e){}return t==='detail'?'detail':'quick'}
+function setEntryTab(t){try{localStorage.setItem('ems_entrytab',t)}catch(e){}S.noCap=true;render()}
+function entryTabs(){const q=entryTab()==='quick';return`<div class="acts" style="margin:0 0 12px"><button class="btn ${q?'':'sec'}" onclick="setEntryTab('quick')"><i class="fa-solid fa-table-list"></i>Quick entry (all equipment)</button><button class="btn ${q?'sec':''}" onclick="setEntryTab('detail')"><i class="fa-solid fa-pen-to-square"></i>Detailed form (one equipment)</button></div>`}
 function renderEntry(){
+  if(!DB.plants.length)return pageTitle('Add Energy Data','Manual data entry')+noPlants();
+  if(S.efId||S.efForceDetail){S.efForceDetail=false;try{localStorage.setItem('ems_entrytab','detail')}catch(e){}}
+  return entryTab()==='quick'?renderQuick():renderEntryDetail()}
+/* ---- quick entry: one sheet for all equipment of a plant ---- */
+function qeState(){if(!S.qe){const d=efDefaults();S.qe={date:d.date,shift:d.shift,plant:d.plant}}if(!plMap()[S.qe.plant])S.qe.plant=DB.plants[0]?.id||'';return S.qe}
+function qeSet(k,v){const q=qeState();q[k]=v;S.noCap=true;render()}
+function qeList(){const q=qeState();return DB.equip.filter(e=>e.plant===q.plant&&e.status!=='Decommissioned').sort((a,b)=>String(a.area||'General').localeCompare(String(b.area||'General'))||String(a.name).localeCompare(String(b.name)))}
+function qeFind(e,q){const sh=q.shift||'A',m=x=>x.equip===e.id&&x.date===q.date&&(x.shift||'A')===sh;return e.type==='diesel'?DB.diesel.find(m):DB.energy.find(m)}
+function qeLast(e,q){let best=null,bk='';const cut=q.date+(q.shift||'A');[...DB.energy,...DB.diesel].forEach(x=>{if(x.equip!==e.id||x.meterEnd==null)return;const k=x.date+(x.shift||'A');if(k<cut&&k>=bk){bk=k;best=x.meterEnd}});return best}
+function renderQuick(){const q=qeState(),L=qeList(),P=pu(),t=today(),pr=DB.prod.find(p=>p.date===q.date&&p.plant===q.plant&&(p.shift||'A')===q.shift);let lastA='',h='',n=0,done=0;
+  L.forEach((e,i)=>{const ex=qeFind(e,q),dsl=e.type==='diesel',last=qeLast(e,q),a=e.area||'General';if(a!==lastA){h+=`<div class="fsec" style="margin-top:12px"><i class="fa-solid fa-location-dot"></i> ${esc(a)}</div>`;lastA=a}
+    if(ex)done++;n++;const v=(k,d)=>ex&&ex[k]!=null&&ex[k]!==''?ex[k]:d;
+    h+=`<div class="qe" data-i="${i}" data-eid="${e.id}" data-last="${last==null?'':last}" data-dsl="${dsl?1:0}"><div class="qh">${eqTag(e)}<b>${esc(e.name)}</b>${e.code?' <small>'+esc(e.code)+'</small>':''}${ex?' <span class="chip g">saved</span>':''}<small class="qlast">${last==null?'no earlier meter reading':'last meter: '+fmt(last,1)}</small></div><div class="qf">
+     <div><label>Meter end</label><input type="number" step="any" min="0" inputmode="decimal" data-k="end" value="${ex&&ex.meterEnd!=null?ex.meterEnd:''}" placeholder="${last==null?'':fmt(last,0)}" oninput="qeCalc(${i})"></div>
+     <div><label>${dsl?'kWh generated':'kWh used'}</label><input type="number" step="any" min="0" inputmode="decimal" data-k="kwh" value="${dsl?v('kwhGen',''):v('kwh','')}" oninput="qeManual(${i})"></div>
+     <div><label>Hours</label><input type="number" step="any" min="0" max="${q.shift==='D'?24:8}" inputmode="decimal" data-k="hrs" value="${v('hours','')}"></div>
+     ${dsl?`<div><label>Diesel litres</label><input type="number" step="any" min="0" inputmode="decimal" data-k="ltr" value="${v('litres','')}"></div>`:''}
+     </div><small class="fe" data-k="err"></small></div>`});
+  return pageTitle('Add Energy Data','Quick entry: choose date and plant, type the meter end and hours of each equipment, then Save all')+entryTabs()+
+  `<div class="glass card ef"><h3><i class="fa-solid fa-table-list"></i>Quick entry<span class="r">${done}/${n} already saved for this ${q.shift==='D'?'day':'shift'}</span></h3><div class="form">
+   <div><label>Date</label><input type="date" value="${esc(q.date)}" max="${t}" onchange="qeSet('date',this.value)"></div>
+   ${entryMode()==='shift'||(q.shift&&q.shift!=='D')?`<div><label>Shift</label><select onchange="qeSet('shift',this.value)">${shOpts(q.shift)}</select></div>`:''}
+   <div><label>Plant</label><select onchange="qeSet('plant',this.value)">${plOpts(q.plant)}</select></div>
+   <div><label>Production (${esc(P.n)}) <small>optional</small></label><input type="number" step="any" min="0" inputmode="decimal" id="qe_prod" value="${pr?pr.tons:''}"></div></div>
+   <p class="hint" style="margin:8px 0">Type only the <b>Meter end</b>: kWh is calculated from the last meter reading. If you have no meter reading, type the kWh directly. Leave a row empty to skip it. Already saved rows can be changed and saved again.</p>
+   ${h||'<div class="empty">No equipment in this plant. Add equipment first.</div>'}
+   <div class="fact"><button class="btn grn" onclick="qeSave()"><i class="fa-solid fa-floppy-disk"></i>Save all</button><button class="btn sec" onclick="qeHours()" title="Fill empty hours from each equipment's last entry"><i class="fa-solid fa-copy"></i>Copy last hours</button></div></div>`+
+  `<div class="glass card" style="margin-top:14px"><h3><i class="fa-solid fa-circle-info"></i>Need meter photo, remarks or reset?</h3><p class="hint">Use "Detailed form" for one equipment (meter photo, remarks, MWh meters, diesel start/end). Records edited there also show here.</p></div>`}
+function qeRow(i){return document.querySelector('.qe[data-i="'+i+'"]')}
+function qeCalc(i){const r=qeRow(i);if(!r)return;const g=k=>r.querySelector('[data-k="'+k+'"]'),end=g('end').value,last=r.dataset.last,er=g('err');er.textContent='';
+  if(end!==''&&last!==''){const d=+end-+last;if(d>=0)g('kwh').value=+d.toFixed(3);else{g('kwh').value='';er.textContent='Meter end is lower than the last reading '+last+' (reset or rollover?). Use the Detailed form.'}}}
+function qeManual(i){const r=qeRow(i);if(!r)return;const e=r.querySelector('[data-k="end"]');if(e&&e.value!==''&&r.dataset.last!=='')e.value=''}
+function qeHours(){let c=0;document.querySelectorAll('.qe').forEach(r=>{const h=r.querySelector('[data-k="hrs"]');if(h&&h.value===''){const v=lastRead(r.dataset.eid,'hours');if(v!=null&&v!==''){h.value=v;c++}}});toast(c?'Hours copied for '+c+' equipment':'No earlier hours found','info')}
+function qeSave(){const q=qeState();if(!q.date||q.date>today()){toast('Choose a valid date (not in the future)','err');return}if(lockBlocked(q.date))return;
+  const sh=q.shift||'A',maxH=sh==='D'?24:8,out=[],errs=[];let noH=0;
+  document.querySelectorAll('.qe').forEach(r=>{const e=EQM[r.dataset.eid];if(!e)return;const g=k=>r.querySelector('[data-k="'+k+'"]').value.trim?r.querySelector('[data-k="'+k+'"]').value.trim():'',gi=k=>{const x=r.querySelector('[data-k="'+k+'"]');return x?x.value.trim():''};
+    const end=gi('end'),kwh=gi('kwh'),hrs=gi('hrs'),ltr=gi('ltr'),dsl=e.type==='diesel',er=r.querySelector('[data-k="err"]');er.textContent='';r.classList.remove('bad');
+    if(end===''&&kwh===''&&hrs===''&&ltr==='')return;const bad=m=>{errs.push(e.name+': '+m);er.textContent=m;r.classList.add('bad')};
+    const nums={end,kwh,hrs,ltr};for(const k in nums){if(nums[k]!==''&&(!isFinite(+nums[k])||+nums[k]<0)){bad('enter a valid positive number');return}}
+    const last=r.dataset.last;let ms=null,me=null;if(end!==''&&last!==''){if(+end<+last){bad('meter end is lower than last reading '+last);return}ms=+last;me=+end}else if(end!==''){me=+end}
+    if(kwh===''&&!(dsl&&ltr!=='')){bad(dsl?'enter kWh generated or diesel litres':'enter meter end or kWh');return}
+    if(hrs!==''&&+hrs>maxH){bad('hours cannot be more than '+maxH);return}
+    if(!dsl&&+kwh>0&&hrs==='')noH++;
+    out.push({e,dsl,kwh:kwh===''?0:+kwh,hrs:hrs===''?0:+hrs,ltr:ltr===''?0:+ltr,ms,me,noL:dsl&&ltr===''})});
+  if(errs.length){toast('Please fix '+errs.length+' row(s) shown in red','err');const f=document.querySelector('.qe.bad');if(f)f.scrollIntoView({block:'center',behavior:'smooth'});return}
+  const prod=document.getElementById('qe_prod').value.trim();if(!out.length&&prod===''){toast('Nothing to save. Enter at least one reading.','warn');return}
+  out.forEach(o=>{const e=o.e,old=qeFind(e,q),id=old?old.id:uid(),m=o.ms!==null?{meterStart:o.ms,meterEnd:o.me}:(o.me!==null?{meterEnd:o.me}:{});
+    const base={date:q.date,shift:sh,plant:q.plant,equip:e.id,hours:o.hrs,remarks:old?old.remarks||'':'',...(old&&old.photo?{photo:old.photo}:{})};
+    if(o.dsl){DB.diesel=DB.diesel.filter(x=>x.id!==id);DB.diesel.push({...(old||{}),...base,id,litres:o.ltr,rate:(old&&old.rate)||rateOn('d',q.date),kwhGen:o.kwh,...m})}
+    else{DB.energy=DB.energy.filter(x=>x.id!==id);DB.energy.push({...(old||{}),...base,id,kwh:o.kwh,rate:(old&&old.rate)||rateOn('e',q.date),...m})}});
+  if(prod!==''&&isFinite(+prod)&&+prod>=0)upsertProd(q.date,q.plant,sh,+prod);
+  S.lastShift=sh;S.lastPlant=q.plant;audit('add','Quick entry',out.length+' records · '+(plMap()[q.plant]?.name||'')+' · '+fd(q.date)+' · Shift '+sh,q.date);save();
+  const w=[];if(noH)w.push(noH+' without hours');const nl=out.filter(o=>o.noL).length;if(nl)w.push(nl+' diesel row(s) without litres');
+  toast(out.length+' records saved'+(w.length?' ('+w.join(', ')+')':''),w.length?'warn':'ok');S.noCap=true;render()}
+function renderEntryDetail(){
   if(!DB.plants.length)return pageTitle('Add Energy Data','Manual data entry')+noPlants();
   if(!S.ef)S.ef=efDefaults();const f=S.ef,e=EQM[f.equip],t=today(),edit=!!S.efId,P=pu();
   const fl=(id,label,inp,extra='')=>`<div ${extra}><label for="ef_${id}">${label}</label>${inp}<small class="fe" id="fe_${id}"></small></div>`;
@@ -1114,7 +1177,7 @@ function renderEntry(){
   const rows=[...DB.energy.filter(x=>x.date>=r.f&&x.date<=r.to&&scopeOK(x)).map(x=>({k:'energy',x})),...DB.diesel.filter(x=>x.date>=r.f&&x.date<=r.to&&scopeOK(x)).map(x=>({k:'diesel',x}))].sort((a,b)=>b.x.date.localeCompare(a.x.date)||String(b.x.shift).localeCompare(String(a.x.shift))).slice(0,200);
   const trs=rows.map(({k,x})=>{const q=EQM[x.equip],d=k==='diesel';return`<tr class="${S.efId===x.id?'sel':''}"><td>${fd(x.date)}</td><td>${shDisp(x.shift)}</td><td>${esc(PL[x.plant]?.name||'—')}</td><td>${esc(q?.area||'—')}</td><td><b>${esc(q?.name||'—')}</b></td><td>${esc(q?.etype||'—')}</td><td class="n">${x.meterStart!=null?fmt(x.meterStart,0)+' → '+fmt(x.meterEnd,0):'—'}</td><td class="n">${d?(x.kwhGen?fmt(x.kwhGen)+' gen':'—'):fmt(x.kwh)}</td><td class="n">${x.hours||'—'}</td><td class="n">${d?fmt(x.litres,1):'—'}</td><td class="n">${d?'—':money(x.kwh*(x.rate||DB.settings.tariff))}</td><td class="n">${d?money(x.litres*(x.rate||DB.settings.dieselRate)):'—'}</td><td>${esc(x.remarks||'')}${x.photo?` <button type="button" class="btn sec sm" onclick="viewPhoto('${x.id}')" title="View meter photo"><i class="fa-solid fa-camera"></i></button>`:''}</td><td style="white-space:nowrap"><button class="btn sec sm" title="Edit" onclick="efEdit('${x.id}','${k}')"><i class="fa-solid fa-pen"></i></button> <button class="btn sec sm" title="Duplicate" onclick="efDup('${x.id}','${k}')"><i class="fa-solid fa-copy"></i></button> <button class="btn sec sm" title="Delete" onclick="efDel('${x.id}','${k}')"><i class="fa-solid fa-trash"></i></button></td></tr>`}).join('');
   setTimeout(()=>{efInfo();efCalc()},0);
-  return pageTitle('Add Energy Data',(entryMode()==='daily'?'Daily entry (24-hour readings)':'Shift-wise entry')+' per equipment • energy, diesel and production in one form')+
+  return pageTitle('Add Energy Data',(entryMode()==='daily'?'Daily entry (24-hour readings)':'Shift-wise entry')+' per equipment • energy, diesel and production in one form')+entryTabs()+
   `<div class="glass card ef" id="efForm" novalidate><h3><i class="fa-solid fa-${edit?'pen-to-square':'circle-plus'}"></i>${edit?'Editing record':'New record'}<span class="r">${edit?'<span class="chip a">Edit mode</span>':'Fields marked * are required'}</span></h3>
    <div class="fsec"><i class="fa-solid fa-location-dot"></i> When &amp; where</div>
    <div class="form">
@@ -1767,7 +1830,7 @@ function exportTemplate(kind){
   const ins=[['Column','Required','Description','Example'],['Date','Yes','YYYY-MM-DD (also DD/MM/YYYY, DD-Mon-YYYY or an Excel date). Not in the future.','2026-11-07'],['Shift','No','A, B, C (1/2/3 also accepted) or Full day (for one reading per 24 hours). Blank = default chosen on import.','A'],['Plant','Yes','Plant name. Unknown plants are created.',p],['Area','No','Area / department. Used for new equipment.','Furnace Bay'],['Equipment','Yes','Equipment name or ID. Unknown equipment is created.','Induction Furnace 1'],['Equipment Type','No','DG Set, Transformer, Motor, Pump, Compressor, Boiler, Furnace, HVAC, Chiller, Other','Furnace'],['Meter Start / Meter End','No','Both or none. Energy = End − Start when Energy is blank.','50000 / 51200'],['Energy (kWh)','Electrical: yes*','Energy consumed. For a DG set this is kWh generated. *Not needed if both meters are given.','1200'],['Running Hours','No','0–24 (max 8 per shift when Shift is given).','8'],['Diesel (L)','Diesel equipment: yes','Litres of diesel consumed. Rows for diesel equipment (DG set, forklift…) are stored as diesel records.','90'],['Production','No','Plant production for that date and shift.','25'],['Energy Rate','No','Per kWh. Blank = default tariff.',DB.settings.tariff],['Diesel Rate','No','Per litre. Blank = default diesel rate.',DB.settings.dieselRate],['Remarks','No','Up to 200 characters.','Note']];
   const w2=XLSX.utils.aoa_to_sheet(ins);w2['!cols']=[{wch:24},{wch:20},{wch:90},{wch:20}];XLSX.utils.book_append_sheet(wb,w2,'Instructions');XLSX.writeFile(wb,'Energy_Diesel_Import_Template.xlsx');toast('Template downloaded')}
 
-const APP_BUILD='v14 • 18 Nov 2026';
+const APP_BUILD='v16 • 18 Nov 2026';
 function renderImport(){
   return pageTitle('Excel Import','Upload .xlsx, .xls or .csv • columns are mapped automatically • review before anything is saved • Build: '+APP_BUILD,`<button class="btn sec" onclick="exportTemplate('xlsx')"><i class="fa-solid fa-file-excel"></i>Export Template</button><button class="btn sec hide-m" onclick="exportTemplate('csv')"><i class="fa-solid fa-file-csv"></i>CSV Template</button>`)+
   `<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-table-cells"></i>Daily grid — easiest way<span class="r"><span class="chip g">Date × Equipment</span></span></h3>
@@ -3338,7 +3401,7 @@ function logoDel(){ask('Remove logo?','The company logo will be removed from the
 function logoPdf(doc,W,bh){const s=DB.settings;if(!s.logo||!s.logoW)return;try{const h=Math.min(46,bh-18),w=Math.min(120,h*s.logoW/s.logoH),hh=w*s.logoH/s.logoW,x=W-30-w,y=(bh-hh)/2;doc.setFillColor(255,255,255);doc.roundedRect(x-5,y-5,w+10,hh+10,5,5,'F');doc.addImage(s.logo,s.logoT||'PNG',x,y,w,hh)}catch(e){}}
 /* ============ incomer meter (CT / PT ratio) + DGVCL HTP-I bill calculator ============ */
 const TARIFF_DEF=()=>({dSlabs:[[500,150],[500,260],[0,475]],excess:555,floorPct:85,minKva:100,eSlabs:[[500,400],[2500,420],[0,430]],touPk:[[500,45],[0,85]],touOff:60,fppas:2.45,fppasSur:3.99,duty:15,other:0,src:'GERC tariff schedule for DGVCL effective 01-04-2026, HTP-I'});
-const METER_DEF=()=>({name:'DGVCL main incomer',consNo:'',ctP:100,ctS:5,ptP:11000,ptS:110,k:1,cd:0,volt:'11',basis:'kvah',set:0,eu:1,mdu:1,mfMode:'direct',mfDirect:1,attr:'prev'});
+const METER_DEF=()=>({name:'DGVCL main incomer',consNo:'',ctP:100,ctS:5,ptP:11000,ptS:110,k:1,cd:0,volt:'11',basis:'kwh',set:0,eu:1,mdu:1,mfMode:'direct',mfDirect:1,attr:'prev'});
 const VOLT_REB={'11':1,'22':1,'33':1.5,'66':1.5,'132':2,'LT':0};
 function meterCfg(){const c=Object.assign(METER_DEF(),DB.meter||{});if(DB.meter&&!DB.meter.mfMode)c.mfMode='calc';return c}
 function tariffCfg(){return Object.assign(TARIFF_DEF(),DB.tariff||{})}
@@ -3405,7 +3468,7 @@ function renderMeter(){
     <div class="mfc" ${M.mfMode==='direct'?'style="display:none"':''}><label>Extra meter constant</label>${num('k',M.k)}</div><div><label>Contract demand (kVA)</label>${num('cd',M.cd)}</div>
     <div><label>Daily consumption is shown on</label><select name="attr"><option value="prev" ${M.attr!=='same'?'selected':''}>Day 1 (day-2 reading − day-1 reading = day 1)</option><option value="same" ${M.attr==='same'?'selected':''}>The later reading's date (day 2)</option></select></div>
     <div><label>Supply voltage</label><select name="volt">${Object.keys(VOLT_REB).map(v=>`<option value="${v}" ${M.volt===v?'selected':''}>${v==='LT'?'LT (below 440 V)':v+' kV'}</option>`).join('')}</select></div>
-    <div><label>Energy billed on</label><select name="basis"><option value="kvah" ${M.basis==='kvah'?'selected':''}>kVAh (Gujarat HT bills)</option><option value="kwh" ${M.basis==='kwh'?'selected':''}>kWh</option></select></div>
+    <div><label>Energy billed on</label><select name="basis"><option value="kwh" ${M.basis==='kwh'?'selected':''}>kWh (DGVCL HT bill – matches your Sep bill)</option><option value="kvah" ${M.basis==='kvah'?'selected':''}>kVAh</option></select></div>
     <div><label>Meter shows energy in</label><select name="eu"><option value="1" ${efOf(M)===1?'selected':''}>kWh / kVAh</option><option value="1000" ${efOf(M)===1000?'selected':''}>MWh / MVAh</option></select></div><div><label>Meter shows demand in</label><select name="mdu"><option value="1" ${mdfOf(M)===1?'selected':''}>kVA</option><option value="1000" ${mdfOf(M)===1000?'selected':''}>MVA</option></select></div>
     <div class="acts" style="grid-column:1/-1"><button class="btn grn"><i class="fa-solid fa-floppy-disk"></i>Save meter</button></div></form>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-top:8px"><b>Multiplying factor (MF)</b> — if you choose "calculate": (CT primary ÷ CT secondary) × (PT primary ÷ PT secondary) × meter constant. Example: CT 100/5 and PT 11000/110 → 20 × 100 = <b>2000</b>. For a CT-operated LT meter use PT 1 / 1. Actual units = (new reading − old reading) × MF. Use the MF printed on your DGVCL bill. If your meter display shows MWh / MVAh / MVA, choose that above; the app converts it to kWh / kVAh / kVA (×1000) after the MF.</p></div>
@@ -3466,7 +3529,7 @@ function mrChart(){if(typeof Chart==='undefined')return;const st=mrSteps().filte
 function mbCalc(){const f=document.getElementById('mbFrom'),t=document.getElementById('mbTo'),o=document.getElementById('mbOut');if(!f||!t||!o)return;const RD=mrAsc().map(x=>x.date),fv=RD.filter(d=>d<=f.value).pop()||RD[0],tv=RD.find(d=>d>=t.value)||RD[RD.length-1],snapped=(fv!==f.value||tv!==t.value);S.mbFrom=fv;S.mbTo=tv;const a=document.getElementById('mbAct');S.mbAct=a?a.value:'';
   if(fv>=tv){o.innerHTML='<div class="wrn"><i class="fa-solid fa-triangle-exclamation"></i>Choose a "To" date after the "From" date.</div>';return}
   const ovM=Number(S.mbOvM)||0,ovU=Number(S.mbOvU)||0,per=mrPeriod(fv,tv),c=billCalc(per,null,null,{md:ovM,units:ovU});if(c.err){o.innerHTML=`<div class="wrn"><i class="fa-solid fa-triangle-exclamation"></i>${esc(c.err)}</div>`;S.mbCalc=null;return}
-  S.mbCalc={per,c,from:fv,to:tv};const act=Number(S.mbAct)||0,df=act?act-c.total:0;const cdv=Number(meterCfg().cd)||0,mdx=c.md>cdv&&cdv>0;const why=act&&Math.abs(df)>1?`<div class="wrn" style="margin-top:10px"><i class="fa-solid fa-circle-info"></i><div><b>Why can the bill differ?</b> Check these in your DGVCL bill and type them in the two boxes above:<br>1) <b>Recorded MD</b> in the bill (app used ${fmt(c.md,1)} kVA${mdx?', which is above contract demand '+fmt(cdv,0)+' kVA, so excess demand is charged':''}).<br>2) <b>Billed units</b> (kVAh) in the bill (app used ${fmt(c.units,0)}). Different billing dates or a meter reading missed gives a different unit total.<br>3) <b>Power factor</b> (app ${c.pf===null?'—':c.pf.toFixed(3)}), bill PF rebate or penalty.<br>4) FPPAS rate, duty %, and other charges (meter rent, arrears, interest) in Tariff settings.</div></div>`:'';
+  S.mbCalc={per,c,from:fv,to:tv};const act=Number(S.mbAct)||0,df=act?act-c.total:0;const cdv=Number(meterCfg().cd)||0,mdx=c.md>cdv&&cdv>0;const why=act&&Math.abs(df)>1?`<div class="wrn" style="margin-top:10px"><i class="fa-solid fa-circle-info"></i><div><b>Why can the bill differ?</b> Check these in your DGVCL bill and type them in the two boxes above:<br>0) <b>Meter setup → Energy billed on</b> must be <b>kWh</b> for DGVCL (your Sep bill is billed on kWh; kVAh gives a higher bill).<br>1) <b>Recorded MD</b> in the bill (app used ${fmt(c.md,1)} kVA${mdx?', which is above contract demand '+fmt(cdv,0)+' kVA, so excess demand is charged':''}).<br>2) <b>Billed units</b> (kVAh) in the bill (app used ${fmt(c.units,0)}). Different billing dates or a meter reading missed gives a different unit total.<br>3) <b>Power factor</b> (app ${c.pf===null?'—':c.pf.toFixed(3)}), bill PF rebate or penalty.<br>4) FPPAS rate, duty %, and other charges (meter rent, arrears, interest) in Tariff settings.</div></div>`:'';
 const mdw=mdx?`<div class="wrn" style="margin-bottom:10px"><i class="fa-solid fa-triangle-exclamation"></i>Maximum demand <b>${fmt(c.md,1)} kVA</b> is above contract demand <b>${fmt(cdv,0)} kVA</b>. Excess demand charge of ${cur()} ${fmt(c.L.filter(x=>/Excess demand/.test(x.l)).reduce((q,x)=>q+x.a,0),0)} is added, and the higher billing demand also changes the energy rate.</div>`:'';
   o.innerHTML=mdw+(snapped?`<div class="wrn" style="margin-bottom:10px"><i class="fa-solid fa-circle-info"></i>Meter readings exist only on certain dates, so this is calculated from the <b>${fd(fv)}</b> reading to the <b>${fd(tv)}</b> reading (${per.days} day${per.days===1?'':'s'}). Readings: ${RD.slice(-8).map(fd).join(', ')}${RD.length>8?' …':''}</div>`:'')+`<div class="kpis sm" style="margin-bottom:12px">${kpi('fa-bolt','Energy used',per.kwh,0,'kWh','var(--cyan)','')}${kpi('fa-gauge','Maximum demand',per.md,1,'kVA','var(--violet)','')}${kpi('fa-wave-square','Power factor',c.pf===null?0:c.pf,3,'','#fbbf24','')}${kpi('fa-indian-rupee-sign','Calculated bill',c.total,0,'','var(--green)','',cur()+' ')}</div>
    <div class="tw"><table><thead><tr><th>Item and how it is worked out</th><th class="n">${cur()}</th></tr></thead><tbody>${c.L.map(x=>`<tr><td style="white-space:normal"><b>${esc(x.l)}</b><br><span style="color:var(--muted);font-size:12.5px">${esc(x.d)}</span></td><td class="n" style="${x.a<0?'color:var(--green)':''}">${x.a<0?'−':''}${fmt(Math.abs(x.a),2)}</td></tr>`).join('')}<tr><td style="white-space:normal"><b>Total</b><br><span style="color:var(--muted);font-size:12.5px">${per.days} days • ${fmt(c.perUnit,2)} ${cur()} per kWh</span></td><td class="n"><b>${fmt(c.total,2)}</b></td></tr>${act?`<tr><td style="white-space:normal"><b>DGVCL bill</b><br><span style="color:var(--muted);font-size:12.5px">Difference: ${df>0?'DGVCL is higher':'DGVCL is lower'} by ${fmt(Math.abs(df),2)} (${(Math.abs(df)/act*100).toFixed(1)}%). Adjust FPPAS or duty in Tariff settings to match your bill.</span></td><td class="n"><b>${fmt(act,2)}</b></td></tr>`:''}</tbody></table></div>${why}
