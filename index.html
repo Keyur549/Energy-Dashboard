@@ -11,12 +11,14 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <title>Electrical Energy & Diesel Management System</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet"></noscript>
+<script async src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" onload="window.onChartLoad&&onChartLoad()"></script>
 <style>:root{--bg1:#050b18;--bg2:#0a1630;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.09);--bd:rgba(120,190,255,.15);--tx:#eaf2ff;--muted:#8fa3c4;--grid:rgba(143,163,196,.14);--acc:#22d3ee;--acc2:#3b82f6;--amber:#fbbf24;--green:#34d399;--red:#f87171;--violet:#a78bfa;--shadow:0 12px 34px rgba(0,0,0,.38);--side:rgba(6,14,32,.82);--inp:rgba(255,255,255,.07);--line:rgba(255,255,255,.035)}
 [data-theme=light]{--bg1:#eef3fb;--bg2:#dce8f9;--card:rgba(255,255,255,.74);--card2:rgba(255,255,255,.95);--bd:rgba(30,64,175,.13);--tx:#0f1b33;--muted:#58698a;--grid:rgba(30,64,175,.1);--acc:#0891b2;--acc2:#2563eb;--amber:#d97706;--green:#059669;--red:#dc2626;--violet:#7c3aed;--shadow:0 10px 28px rgba(30,64,175,.12);--side:rgba(255,255,255,.85);--inp:rgba(15,27,51,.05);--line:rgba(30,64,175,.045)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1027,8 +1029,8 @@ function efCopyLast(){const f=efRead();if(!f.equip){toast('Choose the equipment 
   setV('ef_hours',L.hours);if(L.remarks&&!document.getElementById('ef_remarks').value)setV('ef_remarks',L.remarks);efCalc();
   const kw=L.kwh!=null?' and '+fmt(L.kwh,0)+' kWh':'';toast('Copied '+L.hours+' h from '+fd(L.date)+'. That day was '+L.hours+' h'+kw+'. Now enter the meter end.','info')}
 function efEquipChange(){const f=efRead(),e=EQM[f.equip];efInfo();
-  ['mStart','mEnd','kwh','dStart','dEnd','litres'].forEach(k=>setV('ef_'+k,''));setV('ef_mSU','1');setV('ef_mEU','1');
-  if(e){const ms=lastRead(e.id,'meterEnd');setV('ef_mStart',ms==null?'':ms);if(e.type==='diesel'){const de=lastRead(e.id,'dEnd');setV('ef_dStart',de==null?'':de)}}
+  ['mStart','mEnd','kwh','dStart','dEnd','litres'].forEach(k=>setV('ef_'+k,''));const mu=e&&e.mu===1000?1000:1;setV('ef_mSU',mu);setV('ef_mEU',mu);
+  if(e){const ms=lastRead(e.id,'meterEnd');setV('ef_mStart',ms==null?'':+(ms/mu).toFixed(6));if(e.type==='diesel'){const de=lastRead(e.id,'dEnd');setV('ef_dStart',de==null?'':de)}}
   efProdFill();efCalc()}
 function efProdFill(){const f=efRead(),x=DB.prod.find(p=>p.date===f.date&&p.plant===f.plant&&(p.shift||'A')===f.shift);const el=document.getElementById('ef_prod');if(el)el.value=x?x.tons:''}
 function efCalc(){
@@ -1132,11 +1134,11 @@ function qeList(){const q=qeState();return DB.equip.filter(e=>e.plant===q.plant&
 function qeFind(e,q){const sh=q.shift||'A',m=x=>x.equip===e.id&&x.date===q.date&&(x.shift||'A')===sh;return e.type==='diesel'?DB.diesel.find(m):DB.energy.find(m)}
 function qeLast(e,q){let best=null,bk='';const cut=q.date+(q.shift||'A');[...DB.energy,...DB.diesel].forEach(x=>{if(x.equip!==e.id||x.meterEnd==null)return;const k=x.date+(x.shift||'A');if(k<cut&&k>=bk){bk=k;best=x.meterEnd}});return best}
 function renderQuick(){const q=qeState(),L=qeList(),P=pu(),t=today(),pr=DB.prod.find(p=>p.date===q.date&&p.plant===q.plant&&(p.shift||'A')===q.shift);let lastA='',h='',n=0,done=0;
-  L.forEach((e,i)=>{const ex=qeFind(e,q),dsl=e.type==='diesel',last=qeLast(e,q),a=e.area||'General';if(a!==lastA){h+=`<div class="fsec" style="margin-top:12px"><i class="fa-solid fa-location-dot"></i> ${esc(a)}</div>`;lastA=a}
+  L.forEach((e,i)=>{const ex=qeFind(e,q),dsl=e.type==='diesel',mu=e.mu===1000?1000:1,uL=mu===1000?'MWh':'kWh',last=qeLast(e,q),a=e.area||'General';if(a!==lastA){h+=`<div class="fsec" style="margin-top:12px"><i class="fa-solid fa-location-dot"></i> ${esc(a)}</div>`;lastA=a}
     if(ex)done++;n++;const v=(k,d)=>ex&&ex[k]!=null&&ex[k]!==''?ex[k]:d;
-    h+=`<div class="qe" data-i="${i}" data-eid="${e.id}" data-last="${last==null?'':last}" data-dsl="${dsl?1:0}"><div class="qh">${eqTag(e)}<b>${esc(e.name)}</b>${e.code?' <small>'+esc(e.code)+'</small>':''}${ex?' <span class="chip g">saved</span>':''}<small class="qlast">${last==null?'no earlier meter reading':'last meter: '+fmt(last,1)}</small></div><div class="qf">
-     <div><label>Meter end <button type="button" class="btn sm sec" style="padding:2px 8px" onclick="ocrPick('qe',${i})" title="Read from a meter photo"><i class="fa-solid fa-camera"></i></button></label><input type="number" step="any" min="0" inputmode="decimal" data-k="end" value="${ex&&ex.meterEnd!=null?ex.meterEnd:''}" placeholder="${last==null?'':fmt(last,0)}" oninput="qeCalc(${i})"></div>
-     <div><label>${dsl?'kWh generated':'kWh used'}</label><input type="number" step="any" min="0" inputmode="decimal" data-k="kwh" value="${dsl?v('kwhGen',''):v('kwh','')}" oninput="qeManual(${i})"></div>
+    h+=`<div class="qe" data-i="${i}" data-eid="${e.id}" data-last="${last==null?'':last}" data-dsl="${dsl?1:0}" data-mu="${mu}"><div class="qh">${eqTag(e)}<b>${esc(e.name)}</b>${e.code?' <small>'+esc(e.code)+'</small>':''}${ex?' <span class="chip g">saved</span>':''}<small class="qlast">${last==null?'no earlier meter reading':'last meter: '+fmt(last/mu,mu===1000?3:1)+' '+uL}</small></div><div class="qf">
+     <div><label>Meter end${mu===1000?' (MWh)':''} <button type="button" class="btn sm sec" style="padding:2px 8px" onclick="ocrPick('qe',${i})" title="Read from a meter photo"><i class="fa-solid fa-camera"></i></button></label><input type="number" step="any" min="0" inputmode="decimal" data-k="end" value="${ex&&ex.meterEnd!=null?+(ex.meterEnd/mu).toFixed(6):''}" placeholder="${last==null?'':fmt(last/mu,mu===1000?3:0)}" oninput="qeCalc(${i})"></div>
+     <div><label>${dsl?uL+' generated':uL+' used'}</label><input type="number" step="any" min="0" inputmode="decimal" data-k="kwh" value="${(x=>x===''?'':+(x/mu).toFixed(6))(dsl?v('kwhGen',''):v('kwh',''))}" oninput="qeManual(${i})"></div>
      <div><label>Hours</label><input type="number" step="any" min="0" max="${q.shift==='D'?24:8}" inputmode="decimal" data-k="hrs" value="${v('hours','')}"></div>
      ${dsl?`<div><label>Diesel litres</label><input type="number" step="any" min="0" inputmode="decimal" data-k="ltr" value="${v('litres','')}"></div>`:''}
      </div><small class="fe" data-k="err"></small></div>`});
@@ -1152,8 +1154,8 @@ function renderQuick(){const q=qeState(),L=qeList(),P=pu(),t=today(),pr=DB.prod.
    <div class="fact"><button class="btn grn" onclick="qeSave()"><i class="fa-solid fa-floppy-disk"></i>Save all</button><button class="btn sec" onclick="qeHours()" title="Fill empty hours from each equipment's last entry"><i class="fa-solid fa-copy"></i>Copy last hours</button></div></div>`+
   `<div class="glass card" style="margin-top:14px"><h3><i class="fa-solid fa-circle-info"></i>Need meter photo, remarks or reset?</h3><p class="hint">Use "Detailed form" for one equipment (meter photo, remarks, MWh meters, diesel start/end). Records edited there also show here.</p></div>`}
 function qeRow(i){return document.querySelector('.qe[data-i="'+i+'"]')}
-function qeCalc(i){const r=qeRow(i);if(!r)return;const g=k=>r.querySelector('[data-k="'+k+'"]'),end=g('end').value,last=r.dataset.last,er=g('err');er.textContent='';
-  if(end!==''&&last!==''){const d=+end-+last;if(d>=0)g('kwh').value=+d.toFixed(3);else{g('kwh').value='';er.textContent='Meter end is lower than the last reading '+last+' (reset or rollover?). Use the Detailed form.'}}}
+function qeCalc(i){const r=qeRow(i);if(!r)return;const g=k=>r.querySelector('[data-k="'+k+'"]'),end=g('end').value,last=r.dataset.last,mu=+r.dataset.mu||1,er=g('err');er.textContent='';
+  if(end!==''&&last!==''){const d=(+end*mu-+last)/mu;if(d>=0)g('kwh').value=+d.toFixed(6);else{g('kwh').value='';er.textContent='Meter end is lower than the last reading '+(+last/mu)+(mu===1000?' MWh':'')+' (reset or rollover?). Use the Detailed form.'}}}
 function qeManual(i){const r=qeRow(i);if(!r)return;const e=r.querySelector('[data-k="end"]');if(e&&e.value!==''&&r.dataset.last!=='')e.value=''}
 function qeHours(){let c=0;document.querySelectorAll('.qe').forEach(r=>{const h=r.querySelector('[data-k="hrs"]');if(h&&h.value===''){const v=lastRead(r.dataset.eid,'hours');if(v!=null&&v!==''){h.value=v;c++}}});toast(c?'Hours copied for '+c+' equipment':'No earlier hours found','info')}
 function qeSave(){const q=qeState();if(!q.date||q.date>today()){toast('Choose a valid date (not in the future)','err');return}if(lockBlocked(q.date))return;
@@ -1162,11 +1164,11 @@ function qeSave(){const q=qeState();if(!q.date||q.date>today()){toast('Choose a 
     const end=gi('end'),kwh=gi('kwh'),hrs=gi('hrs'),ltr=gi('ltr'),dsl=e.type==='diesel',er=r.querySelector('[data-k="err"]');er.textContent='';r.classList.remove('bad');
     if(end===''&&kwh===''&&hrs===''&&ltr==='')return;const bad=m=>{errs.push(e.name+': '+m);er.textContent=m;r.classList.add('bad')};
     const nums={end,kwh,hrs,ltr};for(const k in nums){if(nums[k]!==''&&(!isFinite(+nums[k])||+nums[k]<0)){bad('enter a valid positive number');return}}
-    const last=r.dataset.last;let ms=null,me=null;if(end!==''&&last!==''){if(+end<+last){bad('meter end is lower than last reading '+last);return}ms=+last;me=+end}else if(end!==''){me=+end}
+    const last=r.dataset.last,mu=+r.dataset.mu||1,endK=end===''?'':+end*mu;let ms=null,me=null;if(end!==''&&last!==''){if(endK<+last){bad('meter end is lower than last reading '+(+last/mu)+(mu===1000?' MWh':''));return}ms=+last;me=endK}else if(end!==''){me=endK}
     if(kwh===''&&!(dsl&&ltr!=='')){bad(dsl?'enter kWh generated or diesel litres':'enter meter end or kWh');return}
     if(hrs!==''&&+hrs>maxH){bad('hours cannot be more than '+maxH);return}
     if(!dsl&&+kwh>0&&hrs==='')noH++;
-    out.push({e,dsl,kwh:kwh===''?0:+kwh,hrs:hrs===''?0:+hrs,ltr:ltr===''?0:+ltr,ms,me,noL:dsl&&ltr===''})});
+    out.push({e,dsl,kwh:kwh===''?0:+kwh*mu,hrs:hrs===''?0:+hrs,ltr:ltr===''?0:+ltr,ms,me,noL:dsl&&ltr===''})});
   if(errs.length){toast('Please fix '+errs.length+' row(s) shown in red','err');const f=document.querySelector('.qe.bad');if(f)f.scrollIntoView({block:'center',behavior:'smooth'});return}
   const prod=document.getElementById('qe_prod').value.trim();if(!out.length&&prod===''){toast('Nothing to save. Enter at least one reading.','warn');return}
   out.forEach(o=>{const e=o.e,old=qeFind(e,q),id=old?old.id:uid(),m=o.ms!==null?{meterStart:o.ms,meterEnd:o.me}:(o.me!==null?{meterEnd:o.me}:{});
@@ -1490,7 +1492,7 @@ function xlExport(sheets,file,o,fallback){toast('Preparing Excel…','info');
 /* ---- reports ---- */
 function summaryRows(a){const n=a.days.length;return Object.values(a.plant).filter(pl=>!hasEq()||pl.in).map(pl=>{const tg=a.partial?0:pl.p.tKWh*n;return[pl.p.name,Math.round(pl.kwh),Math.round(tg),tg?+((pl.kwh-tg)/tg*100).toFixed(1):'',Math.round(pl.l),+pl.prod.toFixed(1),pl.prod&&pl.kwh?+(pl.kwh/pl.prod).toFixed(1):'',Math.round(pl.ec),Math.round(pl.dc),Math.round(pl.ec+pl.dc),tg?Math.round(pl.kwh-tg):'']})}
 function filterText(){const PL=plMap(),o=[];if(F.plant)o.push('Plant: '+(PL[F.plant]?.name||''));if(F.area)o.push('Area: '+F.area);if(F.etype)o.push('Type: '+F.etype);if(F.equip)o.push('Equipment: '+(EQM[F.equip]?.name||''));if(F.shift)o.push('Shift '+F.shift);return o.length?o.join(' | '):'All plants, areas, equipment, shifts'}
-function exportXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function exportXLSX(){if(typeof XLSX==='undefined'){libsNeed();return}
   const r=getRange(),a=agg(r),PL=plMap(),wb=XLSX.utils.book_new(),SH=[],add=(n,rows)=>{XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);SH.push({name:n,aoa:rows})},P=pu();
   add('Summary',[['Plant','Energy kWh','Target kWh','Variance %','Diesel L','Production '+P.n,'SEC '+secU(),'Electricity Cost','Diesel Cost','Total Cost','Variance kWh'],...summaryRows(a),[],['Filters',filterText()],['Period',r.f+' to '+r.to],['Overall SEC',+a.sec.toFixed(2)],['Diesel specific (L/'+P.p+')',+a.dsc.toFixed(3)],['Overall efficiency %',+a.eff.toFixed(1)]]);
   add('Plant Totals',[['Date','Plant','Plant total kWh','Meter start','Meter end','Remarks'],...(DB.ptot||[]).map(x=>[x.date,PL[x.plant]?.name,x.kwh,x.mS??'',x.mE??'',x.remarks||''])]);
@@ -1510,7 +1512,7 @@ function toYmd(v){if(v instanceof Date&&!isNaN(v))return ymd(new Date(v.getTime(
   if(typeof v==='number'){const d=new Date(Math.round((v-25569)*864e5));return`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}
   const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${pad(m[2])}-${pad(m[3])}`;m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(m)return`${m[3]}-${pad(m[2])}-${pad(m[1])}`;m=s.match(/^(\d{1,2})[\s\-\/.,]*([A-Za-z]{3})[a-z]*[\s\-\/.,]*(\d{4})/);if(m){const mi=MN.findIndex(x=>x.toLowerCase()===m[2].toLowerCase());if(mi>=0)return`${m[3]}-${pad(mi+1)}-${pad(m[1])}`}return''}
 function exportPDF(){
-  if(!window.jspdf){toast('PDF library not loaded (check internet)','err');return}
+  if(!window.jspdf){libsNeed();return}
   const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'}),r=getRange(),a=agg(r),s=DB.settings,W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),R='Rs.',m=n=>R+fmt(n),P=pu(),pr=prevRange(r),pv=agg(pr);
   let y=pdfHead(doc,'Energy & Diesel Management Report',['Period: '+fd(r.f)+' to '+fd(r.to),'Filters: '+filterText()]);
   const tbl=(head,body,opt={})=>{y=pdfTab(doc,y,head,body,{boldFirst:true,...opt})};
@@ -1719,7 +1721,7 @@ function impDrop(ev){ev.preventDefault();ev.currentTarget.classList.remove('over
 function impLoad(file){
   const ext=(file.name.split('.').pop()||'').toLowerCase();
   if(!['xlsx','xls','csv'].includes(ext)){toast('Unsupported file type. Use .xlsx, .xls or .csv','err');return}
-  if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet connection)','err');return}
+  if(typeof XLSX==='undefined'){libsNeed();return}
   if(file.size>8*1024*1024){toast('File is larger than 8 MB — split it into smaller files','err');return}
   if(S.view!=='import'){S.view='import';render()}
   const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');
@@ -1835,12 +1837,12 @@ function exportTemplate(kind){
    [y,'A',p,e?.area||'Furnace Bay',e?.name||'Induction Furnace 1',e?.etype||'Furnace',50000,51200,'',8,'',25,DB.settings.tariff,'','Sample electrical row — Energy is calculated from the meter readings'],
    [y,'A',DB.plants.find(x=>x.id===d?.plant)?.name||p,d?.area||'DG Yard',d?.name||'DG Set 1','DG Set',10000,10300,300,2,90,'',  '',DB.settings.dieselRate,'Sample diesel row — Energy = kWh generated, Diesel = litres used']];
   if(kind==='csv'){dl(csvBlob(rows),'Energy_Diesel_Import_Template.csv');toast('CSV template downloaded');return}
-  if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  if(typeof XLSX==='undefined'){libsNeed();return}
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows.map((r,i)=>i&&r[0]?[ymd(new Date(r[0]+'T00:00:00')),...r.slice(1)]:r));ws['!cols']=IMP_COLS.map(c=>({wch:Math.max(12,c.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Data');
   const ins=[['Column','Required','Description','Example'],['Date','Yes','YYYY-MM-DD (also DD/MM/YYYY, DD-Mon-YYYY or an Excel date). Not in the future.','2026-11-07'],['Shift','No','A, B, C (1/2/3 also accepted) or Full day (for one reading per 24 hours). Blank = default chosen on import.','A'],['Plant','Yes','Plant name. Unknown plants are created.',p],['Area','No','Area / department. Used for new equipment.','Furnace Bay'],['Equipment','Yes','Equipment name or ID. Unknown equipment is created.','Induction Furnace 1'],['Equipment Type','No','DG Set, Transformer, Motor, Pump, Compressor, Boiler, Furnace, HVAC, Chiller, Other','Furnace'],['Meter Start / Meter End','No','Both or none. Energy = End − Start when Energy is blank.','50000 / 51200'],['Energy (kWh)','Electrical: yes*','Energy consumed. For a DG set this is kWh generated. *Not needed if both meters are given.','1200'],['Running Hours','No','0–24 (max 8 per shift when Shift is given).','8'],['Diesel (L)','Diesel equipment: yes','Litres of diesel consumed. Rows for diesel equipment (DG set, forklift…) are stored as diesel records.','90'],['Production','No','Plant production for that date and shift.','25'],['Energy Rate','No','Per kWh. Blank = default tariff.',DB.settings.tariff],['Diesel Rate','No','Per litre. Blank = default diesel rate.',DB.settings.dieselRate],['Remarks','No','Up to 200 characters.','Note']];
   const w2=XLSX.utils.aoa_to_sheet(ins);w2['!cols']=[{wch:24},{wch:20},{wch:90},{wch:20}];XLSX.utils.book_append_sheet(wb,w2,'Instructions');XLSX.writeFile(wb,'Energy_Diesel_Import_Template.xlsx');toast('Template downloaded')}
 
-const APP_BUILD='v19 • 18 Nov 2026';
+const APP_BUILD='v21 • 18 Nov 2026';
 function renderImport(){
   return pageTitle('Excel Import','Upload .xlsx, .xls or .csv • columns are mapped automatically • review before anything is saved • Build: '+APP_BUILD,`<button class="btn sec" onclick="exportTemplate('xlsx')"><i class="fa-solid fa-file-excel"></i>Export Template</button><button class="btn sec hide-m" onclick="exportTemplate('csv')"><i class="fa-solid fa-file-csv"></i>CSV Template</button>`)+
   `<div class="glass card" style="margin-bottom:14px"><h3><i class="fa-solid fa-table-cells"></i>Daily grid — easiest way<span class="r"><span class="chip g">Date × Equipment</span></span></h3>
@@ -1883,7 +1885,7 @@ function ptDel(id){ask('Delete this plant total?','The plant total will be perma
 function ptLast(pid){let b=null,k='';(DB.ptot||[]).forEach(x=>{if(x.plant===pid&&x.mE!=null&&x.date>=k){k=x.date;b=x.mE}});return b}
 /* ---- daily grid (Date x Equipment) ---- */
 const GRID_SH={eq:'Equipment kWh',hr:'Running Hours',dl:'Diesel Litres',pr:'Plant Production',pt:'Plant Total kWh',in:'Instructions'};
-function gridTemplate(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function gridTemplate(){if(typeof XLSX==='undefined'){libsNeed();return}
   const PL=plMap(),eqs=DB.equip.filter(e=>PL[e.plant]).sort((a,b)=>(PL[a.plant].name+a.name).localeCompare(PL[b.plant].name+b.name)),n=Math.max(eqs.length,10),dim_=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate(),ym=today().slice(0,7);
   const pr=[],er=[],tr=[];let lastP='';for(let j=0;j<n;j++){const e=eqs[j];const pn_=e?PL[e.plant].name:'';pr.push(e&&pn_!==lastP?pn_:'');if(e)lastP=pn_;er.push(e?e.name:'');tr.push(e?(e.etype||''):'')}
   const dates=[];for(let d=1;d<=dim_;d++)dates.push(ym+'-'+String(d).padStart(2,'0'));
@@ -1896,7 +1898,7 @@ function gridTemplate(){if(typeof XLSX==='undefined'){toast('Excel library not l
   XLSX.writeFile(wb,'EMS_Daily_Grid_Template.xlsx');toast('Grid template downloaded')}
 function ptCommitList(list){let n=0;DB.ptot=DB.ptot||[];list.forEach(x=>{let pl=DB.plants.find(p=>p.name.toLowerCase()===x.plant.toLowerCase());if(!pl){pl={id:uid(),name:x.plant,base:0,tKWh:0,tDiesel:0,tSEC:0};DB.plants.push(pl)}
     const o=DB.ptot.find(e=>e.plant===pl.id&&e.date===x.date),rec={date:x.date,plant:pl.id,kwh:x.kwh,mS:x.mS,mE:x.mE,remarks:o?o.remarks||'':''};if(o)Object.assign(o,rec);else DB.ptot.push({id:uid(),...rec});n++});return n}
-function gridPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function gridPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){libsNeed();return}
   const ext=(f.name.split('.').pop()||'').toLowerCase();if(!['xlsx','xls'].includes(ext)){toast('Use the .xlsx grid file (CSV has only one sheet)','err');return}if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
   const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');rd.onload=e=>{try{gridLoad(XLSX.read(e.target.result,{type:'array'}),f)}catch(err){toast('Could not read file: '+err.message,'err')}};rd.readAsArrayBuffer(f)}
 function rollJudge(pv,val,mx){if(val>=pv)return{k:'ok'};const D=Math.max(4,Math.floor(Math.log10(Math.max(mx||pv,1)))+1),top=Math.pow(10,D);
@@ -1912,13 +1914,14 @@ function gridLoad(wb,file){
   const plC={};if(Pr.length){for(let j=1;j<(Pr[0]||[]).length;j++){const q=tx(Pr[0][j]);if(q)plC[q.toLowerCase()]=j}}
   const ptC=[];if(Pt.length){for(let j=1;j<(Pt[0]||[]).length;j++){const q=tx(Pt[0][j]);if(q)ptC.push({j,plant:q})}}
   const out=[IMP_COLS.slice()],pre={},prev={},ptPrev={},pmx={},ppmx={},ptl=[],st={dates:0,skipDate:0,base:0,prodLost:0,ptBase:0};
+  const feq=(c)=>{const pl=DB.plants.find(p=>p.name.toLowerCase()===c.plant.toLowerCase());return pl&&DB.equip.find(e=>e.plant===pl.id&&e.name.toLowerCase()===c.equip.toLowerCase())};
   const lm=(c)=>{const pl=DB.plants.find(p=>p.name.toLowerCase()===c.plant.toLowerCase()),eq=pl&&DB.equip.find(e=>e.plant===pl.id&&e.name.toLowerCase()===c.equip.toLowerCase());return eq?lastMeter(eq.id):null};
   for(let r=3;r<Math.max(E.length,Pt.length);r++){const dc=[E,Pt,Pr,Hh,Dl].map(S_=>S_[r]&&S_[r][0]).find(x=>tx(x)!=='');if(dc===undefined)continue;const d=impDate(dc);if(d.e)continue;if(d.bad){if(!/^date/i.test(tx(dc)))st.skipDate++;continue}st.dates++;
     const prodTaken=new Set(),num=(S_,c)=>{const x=S_&&S_[r]?S_[r][c.j]:'';const q=pn(x);return q.e||q.bad?null:q.v};
     cols.forEach(c=>{const dg=/\bdg\b|diesel|generator/i.test(c.type||''),mf=(Number(E[3]&&E[3][c.j])>0?Number(E[3][c.j]):1);let hrs=num(Hh,c);
     if(hmode==='meter'&&!dg&&hrs!==null){const pv=hprev[c.j];hprev[c.j]=hrs;if(pv===undefined){hrs=null;st.hbase=(st.hbase||0)+1}else if(hrs>=pv)hrs=+(hrs-pv).toFixed(3);else if(hrs<pv*.5){st.hreset=(st.hreset||0)+1;if(hrs>24){hrs=null;st.hbad=(st.hbad||0)+1}}else{hrs=null;st.hneg=(st.hneg||0)+1}
       if(hrs!==null&&hrs>24){if(hrs>72){hrs=null;st.hbad=(st.hbad||0)+1}else{hrs=24;st.hcap=(st.hcap||0)+1}}}
-    const raw=num(E,c);if(raw===null)return;const val=+(raw*uf*mf).toFixed(6),lit=num(Dl,c);if(dg&&!(raw>0)&&!(lit>0)&&!(hrs>0))return;let mS='',mE='',kwh='',rm='';
+    const raw=num(E,c);if(raw===null)return;const eqm=feq(c),ufc=eqm&&eqm.mu===1000?1000:uf,val=+(raw*ufc*mf).toFixed(6),lit=num(Dl,c);if(dg&&!(raw>0)&&!(lit>0)&&!(hrs>0))return;let mS='',mE='',kwh='',rm='';
       if(mode==='meter'&&!dg){let pv=prev[c.j];if(pv===undefined)pv=lm(c);prev[c.j]=val;if(pv===null||pv===undefined){st.base++;return}const J=rollJudge(pv,val,pmx[c.j]);pmx[c.j]=Math.max(pmx[c.j]||0,val,pv);if(J.k==='ok'){mS=pv;mE=val}else if(J.k==='roll'){kwh=J.v;rm='Meter rollover ('+J.top.toLocaleString('en-IN')+' limit): usage = limit - old reading + new reading';st.roll=(st.roll||0)+1}else if(J.k==='reset'){kwh=val;rm='Meter reset: new reading used as the day kWh';st.reset=(st.reset||0)+1}else{st.neg=(st.neg||0)+1;return}}else kwh=val;
       let prodV='';const pj=plC[c.plant.toLowerCase()];if(pj!==undefined&&!prodTaken.has(c.plant.toLowerCase())){const pr=Pr[r]?pn(Pr[r][pj]):{e:1};if(!pr.e&&!pr.bad){prodV=pr.v;prodTaken.add(c.plant.toLowerCase())}}
       out.push([d.v,'',c.plant,'',c.equip,c.type,mS,mE,kwh,hrs===null?'':hrs,lit===null?'':lit,prodV,'','',rm])});
@@ -2006,7 +2009,7 @@ function dtExport(kind){const cols=DT_COLS(),rows=dtRows();if(!rows.length){toas
   const body=rows.map(r=>[r.date,shDisp(r.shift),r.plant,r.equip,r.type,r.kwh===null?'':+r.kwh.toFixed(2),r.gen?+r.gen.toFixed(2):'',r.hours||'',r.litres===null?'':+r.litres.toFixed(2),r.prod===null?'':+r.prod.toFixed(2),r.sec===null?'':+r.sec.toFixed(3),r.dpt===null?'':+r.dpt.toFixed(4),r.ec===null?'':Math.round(r.ec),r.dc===null?'':Math.round(r.dc),r.vr===null?'':+r.vr.toFixed(1),r.remarks]);
   const name=`Energy_Data_${getRange().f}_to_${getRange().to}`;
   if(kind==='csv'){dl(csvBlob([head,...body]),name+'.csv');toast('CSV exported ('+rows.length+' rows)');return}
-  if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+  if(typeof XLSX==='undefined'){libsNeed();return}
   const rg=getRange();xlExport([{name:'Energy Data',aoa:[head,...body]}],name+'.xlsx',{title:'Energy Data Records',sub:['Period: '+fd(rg.f)+' to '+fd(rg.to),'Filters: '+filterText(),rows.length+' records']},()=>{const ws=XLSX.utils.aoa_to_sheet([head,...body]);ws['!cols']=head.map(h=>({wch:Math.max(11,h.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Energy Data');XLSX.writeFile(wb,name+'.xlsx')})}
 function renderData(){
   if(!DB.plants.length)return pageTitle('Energy Data','')+noPlants();
@@ -2266,14 +2269,14 @@ function repTableHtml(sec,limit){const rows=limit?sec.rows.slice(0,limit):sec.ro
   return`<div class="tw"><table class="rt"><thead><tr>${sec.head.map((h,i)=>`<th${i&&sec.rows.length&&txt(sec.rows[0][i])?' class="n"':''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr>${x.map((v,i)=>`<td class="${txt(v)?'n':''}"${typeof v==='string'&&v.length>40?' style="white-space:normal;min-width:240px"':''}>${repCell(v)}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${sec.head.length}" class="empty">No data for this period / filter</td></tr>`}${sec.total?`<tr style="font-weight:700">${sec.total.map((v,i)=>`<td class="${txt(v)?'n':''}">${repCell(v)}</td>`).join('')}</tr>`:''}</tbody></table></div>${limit&&sec.rows.length>limit?`<p style="color:var(--muted);font-size:12px;margin-top:8px">Showing first ${limit} of ${fmt(sec.rows.length)} rows — export for the full report.</p>`:''}`}
 function repPreview(k){S.rep=k;render();setTimeout(()=>{const el=document.getElementById('repPrev');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})},60)}
 function repClose(){S.rep='';render()}
-function repExportXLSX(k){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function repExportXLSX(k){if(typeof XLSX==='undefined'){libsNeed();return}
   const r=getRange(),rep=repBuild(k,r),meta=repMeta(r),aoa=[[repName(k)],...meta.map(x=>[x]),[]];
   rep.sections.forEach(s=>{if(rep.sections.length>1)aoa.push([s.title]);aoa.push(s.head);s.rows.forEach(x=>aoa.push(x));if(s.total)aoa.push(s.total);aoa.push([])});
   if(rep.note)aoa.push(['Note: '+rep.note]);
   const fn=`${repName(k).replace(/\s+/g,'_')}_${r.f}_to_${r.to}.xlsx`,blocks=[];
   rep.sections.forEach(s=>{blocks.push({title:rep.sections.length>1?s.title:'',head:s.head,rows:s.total?[...s.rows,s.total]:s.rows,totalLast:!!s.total})});if(rep.note)blocks.push({note:'Note: '+rep.note});
   xlExport([{name:repName(k),title:repName(k),blocks}],fn,{title:repName(k),sub:[meta[1],meta[2]]},()=>{const ws=XLSX.utils.aoa_to_sheet(aoa),wd=Math.max(...rep.sections.map(s=>s.head.length),1);ws['!cols']=Array.from({length:wd},(_,i)=>({wch:Math.min(48,Math.max(12,...rep.sections.map(s=>String(s.head[i]||'').length+2)))}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,repName(k).replace(/[\\\/?*\[\]:]/g,'').slice(0,31));XLSX.writeFile(wb,fn)})}
-function repExportPDF(k){if(!window.jspdf){toast('PDF library not loaded (check internet)','err');return}
+function repExportPDF(k){if(!window.jspdf){libsNeed();return}
   const r=getRange(),rep=repBuild(k,r),wide=rep.sections.some(s=>s.head.length>8),{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4',orientation:wide?'landscape':'portrait'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),meta=repMeta(r);
   let y=pdfHead(doc,repName(k),[meta[1],meta[2]]);
   rep.sections.forEach(s=>{if(rep.sections.length>1)y=pdfSec(doc,y,s.title);
@@ -2310,7 +2313,7 @@ const statTotal=s=>Object.values(s).reduce((x,y)=>x+y,0);
 function dateRange(d){const ds=[...(d.energy||[]),...(d.diesel||[])].map(x=>x.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();return ds.length?ds[0]+' to '+ds[ds.length-1]:'no records'}
 function exportJSON(quiet){DB.settings.lastBackup=new Date().toISOString();save();dl(new Blob([JSON.stringify({...DB,_meta:{app:'EMDS',exported:DB.settings.lastBackup,company:DB.settings.company,counts:statsOf(DB)}},null,1)],{type:'application/json'}),`EMDS_backup_${today()}_${new Date().toTimeString().slice(0,5).replace(':','')}.json`);if(!quiet){toast('JSON backup downloaded');if(S.view==='backup')render()}}
 function objRows(arr,map){const keys=[];arr.forEach(o=>Object.keys(o).forEach(k=>{if(!keys.includes(k))keys.push(k)}));return[keys.concat(map?map.map(m=>m[0]):[]),...arr.map(o=>keys.map(k=>k==='photo'?(o[k]?'Yes':''):o[k]===undefined||o[k]===null?'':typeof o[k]==='object'?JSON.stringify(o[k]):o[k]).concat(map?map.map(m=>m[1](o)):[]))]}
-function exportAllXLSX(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function exportAllXLSX(){if(typeof XLSX==='undefined'){libsNeed();return}
   const wb=XLSX.utils.book_new(),SH=[],PL=plMap(),add=(n,rows)=>{const rr=rows.length?rows:[['(no data)']];XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rr),n);SH.push({name:n,aoa:rr})},pn=o=>PL[o.plant]?.name||'',en=o=>EQM[o.equip]?.name||'';
   add('Plants',objRows(DB.plants));add('Equipment',objRows(DB.equip,[['plantName',pn]]));add('Energy',objRows(DB.energy,[['plantName',pn],['equipName',en]]));add('Diesel',objRows(DB.diesel,[['plantName',pn],['equipName',en]]));add('Production',objRows(DB.prod,[['plantName',pn]]));
   add('Diesel Received',objRows(DB.dieselRecv||[]));add('Diesel Adjustments',objRows(DB.dieselAdj||[]));add('Diesel Dips',objRows(DB.dieselDips||[]));add('Electricity Bills',objRows(DB.bills||[]));add('Incomer Readings',objRows(DB.mreads||[]));
@@ -2383,7 +2386,8 @@ const BASE_ET_LIST=BASE_ET;
 const EQ_STATUS=['Active','Standby','Under Maintenance','Decommissioned'];
 const METER_TYPES=['Digital Energy Meter','Smart Meter (AMR/AMI)','Analog Energy Meter','CT-Operated Meter','Fuel Flow Meter','Tank Dip / Level','No Meter'];
 const eqStChip=s=>`<span class="chip ${{Active:'g',Standby:'b','Under Maintenance':'a',Decommissioned:'x'}[s||'Active']||'x'}">${esc(s||'Active')}</span>`;
-function ensureMaster(){DB.audit=DB.audit||[];DB.brk=DB.brk||[];DB.maint=DB.maint||[];DB.esp=DB.esp||[];DB.gen=DB.gen||[];DB.signoff=DB.signoff||{};DB.locks=DB.locks||{};DB.ptot=DB.ptot||[];DB.bills=DB.bills||[];DB.mreads=DB.mreads||[];DB.areas=DB.areas||[];DB.etypes=DB.etypes||[];DB.rates=DB.rates||{e:[],d:[]};DB.rates.e=DB.rates.e||[];DB.rates.d=DB.rates.d||[];
+function muMigrate(){const s=DB.settings;if(s.muMig)return;const W=/^(chbp-?8701|chbp-?8702|tc|ac-?7101)$/i,L=DB.equip.filter(e=>(W.test(String(e.name||'').trim())||W.test(String(e.code||'').trim()))&&!e.mu);if(!L.length)return;L.forEach(e=>{e.mu=1000});s.muMig=1;S.muMsg=L.map(e=>e.name).join(', ');setTimeout(()=>{try{save();toast('Meter unit set to MWh for: '+S.muMsg,'info')}catch(x){}},1500)}
+function ensureMaster(){muMigrate();DB.audit=DB.audit||[];DB.brk=DB.brk||[];DB.maint=DB.maint||[];DB.esp=DB.esp||[];DB.gen=DB.gen||[];DB.signoff=DB.signoff||{};DB.locks=DB.locks||{};DB.ptot=DB.ptot||[];DB.bills=DB.bills||[];DB.mreads=DB.mreads||[];DB.areas=DB.areas||[];DB.etypes=DB.etypes||[];DB.rates=DB.rates||{e:[],d:[]};DB.rates.e=DB.rates.e||[];DB.rates.d=DB.rates.d||[];
   const want=[...BASE_ET,...DB.etypes.filter(t=>!BASE_ET.includes(t))];if(ETYPES.join('|')!==want.join('|')){ETYPES.length=0;ETYPES.push(...want)}
   [['e','tariff'],['d','dieselRate']].forEach(([k,s])=>{const L=DB.rates[k];if(L.length){const h=rateEntry(k,today());if(h)DB.settings[s]=h.rate}})}
 function rateEntry(k,date){const L=(DB.rates&&DB.rates[k])||[];if(!L.length)return null;let best=null,first=L[0];L.forEach(x=>{if(x.from<first.from)first=x;if(x.from<=date&&(!best||x.from>best.from))best=x});return best||first}
@@ -2433,6 +2437,7 @@ function eqFormCard(){const edit=S.eqEdit?EQM[S.eqEdit]:null,o=edit||{code:nextC
     <div><label>Rated current (A)</label><input type="number" name="ratedCurrent" min="0" step="any" value="${o.ratedCurrent??''}" inputmode="decimal" placeholder="e.g. 350"></div>
     <div><label>Manufacturer</label><input name="manufacturer" value="${esc(o.manufacturer||'')}" maxlength="60"></div>
     <div><label>Commissioning date</label><input type="date" name="commissioned" value="${esc(o.commissioned||'')}" max="${today()}"></div>
+    <div><label>Meter reads energy in</label><select name="mu"><option value="1" ${o.mu===1000?'':'selected'}>kWh</option><option value="1000" ${o.mu===1000?'selected':''}>MWh (units are converted to kWh)</option></select></div>
     <div><label>Meter type</label><select name="meterType">${opt(METER_TYPES,o.meterType||'Digital Energy Meter')}</select></div>
     <div><label>Status</label><select name="status">${opt(EQ_STATUS,o.status||'Active')}</select></div>
     <div style="grid-column:1/-1"><label>Remarks</label><input name="remarks" value="${esc(o.remarks||'')}"></div>
@@ -2446,7 +2451,7 @@ function saveEquip(ev){ev.preventDefault();const f=ev.target.elements,code=f.cod
   const num=(k,l)=>{const r=numOrBlank(f[k].value);if(r.bad){toast(l+' must be a number of 0 or more','err');return NaN}return r.blank?null:r.v};
   const kw=num('kw','Capacity'),rv=num('ratedVoltage','Rated voltage'),ra=num('ratedCurrent','Rated current');if([kw,rv,ra].some(Number.isNaN))return;
   const cd=f.commissioned.value;if(cd&&(!/^\d{4}-\d{2}-\d{2}$/.test(cd)||cd>today())){toast('Commissioning date cannot be in the future','err');return}
-  const o={code,name,plant:f.plant.value,area:f.area.value.trim()||'General',etype:f.etype.value,kw:kw||0,capUnit:f.capUnit.value,type:f.type.value,ratedVoltage:rv,ratedCurrent:ra,manufacturer:f.manufacturer.value.trim(),commissioned:cd,meterType:f.meterType.value,status:f.status.value,remarks:f.remarks.value.trim()};
+  const o={code,name,plant:f.plant.value,area:f.area.value.trim()||'General',etype:f.etype.value,kw:kw||0,capUnit:f.capUnit.value,type:f.type.value,ratedVoltage:rv,ratedCurrent:ra,manufacturer:f.manufacturer.value.trim(),commissioned:cd,meterType:f.meterType.value,status:f.status.value,remarks:f.remarks.value.trim(),mu:Number(f.mu.value)===1000?1000:undefined};
   if(S.eqEdit){const e=EQM[S.eqEdit];if(e){const op=e.plant;Object.assign(e,o);if(op!==e.plant){DB.energy.forEach(x=>{if(x.equip===e.id)x.plant=e.plant});DB.diesel.forEach(x=>{if(x.equip===e.id)x.plant=e.plant})}}S.eqEdit='';toast('Equipment updated')}
   else{DB.equip.push({id:uid(),...o});toast('Equipment added')}
   save();render()}
@@ -2469,7 +2474,7 @@ const MX={
 const EQM_COLS=MX.Equipment.c;
 function mxInstr(){return[['Sheet','Column','Required','What to enter'],['Plants','Plant','Yes','Plant name. New plants are created; existing ones get the targets updated.'],['Plants','Targets','No','Monthly kWh, diesel litres, SEC and production target. Blank = no change.'],['Areas','Area','Yes','Area / department name.'],['Equipment Types','Equipment Type','Yes','Your own types (built-in types already exist: '+BASE_ET.join(', ')+').'],['Equipment','Plant, Equipment','Yes','Same name in the same plant updates the equipment. New plant / area / type are created automatically.'],['Equipment','Energy Source','No','Electrical or Diesel. Blank = Diesel for DG Set, else Electrical.'],['Equipment','Capacity Unit','No','kW, kVA, HP, TR, kg/h'],['Equipment','Equipment ID','No','Blank = EQ-xxx given automatically.'],['Equipment','Commissioning Date','No','YYYY-MM-DD'],['Equipment','Meter Type','No',METER_TYPES.join(', ')],['Equipment','Status','No',EQ_STATUS.join(', ')],['Energy Rates / Diesel Rates','Effective From, Rate','Yes','Rate applies to records on/after the date. Same date replaces the old rate.'],['Diesel Receipts','Date, Litres, Rate','Yes','Diesel purchased / received. Same date + litres + invoice is skipped as a duplicate.'],['All','Sheets','','Delete or leave empty the sheets you do not need. Daily energy / diesel readings, production and plant totals are imported from Excel Import; meter readings from Incomer Meter.']]}
 function eqmTemplate(withData){masterXlsx(withData)}
-function masterXlsx(withData){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function masterXlsx(withData){if(typeof XLSX==='undefined'){libsNeed();return}
   const PL=plMap(),wb=XLSX.utils.book_new(),add=(n,rows,w)=>{const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=(rows[0]||[]).map(c=>({wch:Math.max(w||14,String(c).length+2)}));XLSX.utils.book_append_sheet(wb,ws,n)};
   const D={};
   if(withData){
@@ -2483,7 +2488,7 @@ function masterXlsx(withData){if(typeof XLSX==='undefined'){toast('Excel library
   add('Instructions',mxInstr(),28);
   XLSX.writeFile(wb,withData?'Master_Data_Export.xlsx':'Master_Data_Template.xlsx');toast('Excel downloaded')}
 function eqmPick(inp){masterPick(inp)}
-function masterPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function masterPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;if(typeof XLSX==='undefined'){libsNeed();return}
   if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
   const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');rd.onload=e=>{try{masterLoad(XLSX.read(e.target.result,{type:'array'}))}catch(err){toast('Could not read file: '+err.message,'err')}};rd.readAsArrayBuffer(f)}
 const nk=x=>String(x==null?'':x).toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -2806,7 +2811,7 @@ function mgmtMonths(){const m=new Set();[...DB.energy,...DB.diesel,...(DB.ptot||
 function mgmtCard(){const L=mgmtMonths();if(!L.length)return'';const mo=S.mgMo&&L.includes(S.mgMo)?S.mgMo:L[L.length-1];
   return`<div class="glass card" style="margin-top:14px"><h3><i class="fa-solid fa-file-lines"></i>Plant Head report — one page<span class="r">${esc(DB.settings.company||'')}</span></h3><p style="color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 10px">A single-page monthly summary: energy, diesel, cost, SEC vs last month, plant targets, top equipment, DGVCL meter (PF and demand), alerts and data completeness. It ignores the filters above.</p>
   <div class="acts"><select style="width:auto" onchange="S.mgMo=this.value">${L.map(m=>`<option value="${m}" ${m===mo?'selected':''}>${MN[+m.slice(5)-1]} ${m.slice(0,4)}</option>`).join('')}</select><button class="btn" onclick="mgmtPDF(S.mgMo||this.parentNode.querySelector('select').value)"><i class="fa-solid fa-file-pdf"></i>Download PDF</button><button class="btn sec" onclick="waMonthSend(S.mgMo||this.parentNode.querySelector('select').value)"><i class="fa-brands fa-whatsapp"></i>WhatsApp message</button><button class="btn sec" onclick="waMonthCopy(S.mgMo||this.parentNode.querySelector('select').value)"><i class="fa-solid fa-copy"></i>Copy text</button></div></div>`}
-function mgmtPDF(mo){if(!window.jspdf){toast('PDF library not loaded (check internet)','err');return}
+function mgmtPDF(mo){if(!window.jspdf){libsNeed();return}
   const f=mo+'-01',to=mo+'-'+pad(dim(mo)),r={f,to},t=today(),cut=to>t?t:to;
   withF({},()=>{const a=agg({f,to:cut}),pm=(()=>{const y=+mo.slice(0,4),m=+mo.slice(5),py=m===1?y-1:y,pmm=m===1?12:m-1,pmo=py+'-'+pad(pmm);return pmo})(),pa=agg({f:pm+'-01',to:pm+'-'+pad(Math.min(dim(pm),+cut.slice(8,10)))}),P=pu(),s=DB.settings;
     const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),m=n=>'Rs.'+fmt(n),X=pdfTxt,ch=(c,p)=>p?((c-p)/p*100>=0?'+':'')+((c-p)/p*100).toFixed(1)+'%':'-';
@@ -2852,7 +2857,7 @@ function renderHub(){ensureStock();ensureMaster();
   <p style="color:var(--muted);font-size:12.5px;line-height:1.6;margin:6px 0 0"><b>Add</b> opens the right entry form in one tap. For many rows at once, use Excel above. Everything you add or import is saved on this device and synced to the cloud when you are logged in.</p>`}
 function hubPick(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;
   const ext=(f.name.split('.').pop()||'').toLowerCase();if(!['xlsx','xls','csv'].includes(ext)){toast('Use .xlsx, .xls or .csv','err');return}
-  if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
+  if(typeof XLSX==='undefined'){libsNeed();return}if(f.size>8*1024*1024){toast('File is larger than 8 MB','err');return}
   const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');
   rd.onload=e=>{try{let wb;if(ext==='csv'){let t=e.target.result;if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);wb=XLSX.read(t,{type:'string',raw:true})}else wb=XLSX.read(e.target.result,{type:'array'});
     const names=wb.SheetNames.map(n=>nk(n)),kind=hubKind(wb,names);
@@ -3535,7 +3540,7 @@ async function qrPdf(){const L=qrList();if(!L.length){toast('No equipment','warn
     doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(20);doc.text(X(e.name).slice(0,28),x+cw/2,y+q+28,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90);doc.text(X((e.code||e.id)+'  |  '+(PL[e.plant]?.name||'')).slice(0,40),x+cw/2,y+q+42,{align:'center'})});
   doc.save('Equipment_QR_Labels.pdf');toast('QR labels downloaded')}
 function qrOpen(){const h=location.hash;if(!h||h.indexOf('#eq=')!==0)return true;const id=decodeURIComponent(h.slice(4)),e=EQM&&EQM[id];if(!e||document.body.classList.contains('locked'))return false;
-  S.ef={...efDefaults(),plant:e.plant,area:e.area||'',equip:e.id};const ms=lastRead(e.id,'meterEnd');if(ms!=null)S.ef.mStart=ms;if(e.type==='diesel'){const de=lastRead(e.id,'dEnd');if(de!=null)S.ef.dStart=de}
+  S.ef={...efDefaults(),plant:e.plant,area:e.area||'',equip:e.id};const ms=lastRead(e.id,'meterEnd'),mu=e.mu===1000?1000:1;if(ms!=null)S.ef.mStart=+(ms/mu).toFixed(6);if(mu===1000)setTimeout(()=>{setV('ef_mSU',1000);setV('ef_mEU',1000);efCalc()},80);if(e.type==='diesel'){const de=lastRead(e.id,'dEnd');if(de!=null)S.ef.dStart=de}
   S.efId='';S.efForceDetail=true;try{history.replaceState(null,'',location.pathname+location.search)}catch(x){}go('entry');toast('Opened '+e.name,'info');return true}
 function qrWatch(){let n=0;const t=setInterval(()=>{let ok=false;try{ok=qrOpen()}catch(e){ok=true}if(ok||++n>25)clearInterval(t)},1000)}
 
@@ -3651,11 +3656,11 @@ function renderMeter(){
     <div><label>Variable FPPAS (% of demand + energy + fuel charges)</label>${num('fppasSur',T.fppasSur)}</div><div><label>Electricity duty (%)</label>${num('duty',T.duty)}</div>
     <div><label>Other charges per bill (${cur()})</label>${num('other',T.other)}</div><div></div>
     <div class="acts" style="grid-column:1/-1"><button class="btn grn"><i class="fa-solid fa-floppy-disk"></i>Save tariff</button><button type="button" class="btn sec" onclick="tariffReset()">Reset to FY 2026-27 values</button></div></form></details>`}
-function mrTemplate(){if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function mrTemplate(){if(typeof XLSX==='undefined'){libsNeed();return}
   const k=efOf()===1000?1:1,rows=[['Date','kWh Reading','kVAh Reading','MD (kVA)','Peak kVAh Reading','11-17h kVAh Reading','Remarks'],['2026-11-01',1250.40,1262.10,780.5,'','','Sample - first reading'],['2026-11-02',1262.85,1275.00,795.2,'','',''],['2026-11-03',1275.30,1287.90,802.0,'','','']];
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(c=>({wch:Math.max(14,c.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Meter readings');
   const w2=XLSX.utils.aoa_to_sheet([['Column','Required','Notes'],['Date','Yes','YYYY-MM-DD or DD/MM/YYYY. One row per date.'],['kWh Reading','Yes','Raw reading shown on the meter (before CT/PT multiplying factor). If your meter shows MWh, set "Meter shows energy in" = MWh / MVAh in Meter setup and enter the same raw numbers.'],['kVAh Reading','Recommended','Needed for kVAh billing and power factor.'],['MD (kVA)','Recommended','Maximum demand reading from the meter (raw, before MF). Put MVA values if the meter shows MVA and you selected MVA.'],['Peak kVAh Reading / 11-17h kVAh Reading','No','Only for ToD charges.'],['Remarks','No',''],['New / replaced meter','No','If a meter was replaced, add that reading in the app with the "New or replaced meter" tick.']]);w2['!cols']=[{wch:34},{wch:14},{wch:100}];XLSX.utils.book_append_sheet(wb,w2,'Instructions');XLSX.writeFile(wb,'Incomer_Meter_Readings_Template.xlsx');toast('Template downloaded')}
-function mrImport(inp){const file=inp.files&&inp.files[0];inp.value='';if(!file)return;if(typeof XLSX==='undefined'){toast('Excel library not loaded (check internet)','err');return}
+function mrImport(inp){const file=inp.files&&inp.files[0];inp.value='';if(!file)return;if(typeof XLSX==='undefined'){libsNeed();return}
   if(file.size>5*1024*1024){toast('File is larger than 5 MB','err');return}const ext=(file.name.split('.').pop()||'').toLowerCase();if(!['xlsx','xls','csv'].includes(ext)){toast('Use .xlsx, .xls or .csv','err');return}
   const rd=new FileReader();rd.onerror=()=>toast('Could not read the file','err');
   rd.onload=e=>{try{let wb;if(ext==='csv'){let t=e.target.result;if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);wb=XLSX.read(t,{type:'string',raw:true})}else wb=XLSX.read(e.target.result,{type:'array'});
@@ -3724,6 +3729,16 @@ function mrDel(id){ask('Delete this reading?','The reading will be permanently d
 function tariffSave(ev){ev.preventDefault();const f=ev.target.elements,T=tariffCfg(),v=k=>Number(f[k].value)||0,sl=(arr,key)=>arr.map((x,i)=>[v(key+i+'w'),v(key+i+'r')]);
   DB.tariff={...T,dSlabs:sl(T.dSlabs,'d'),eSlabs:sl(T.eSlabs,'e'),touPk:sl(T.touPk,'t'),excess:v('excess'),floorPct:v('floorPct'),minKva:v('minKva'),touOff:v('touOff'),fppas:v('fppas'),fppasSur:v('fppasSur'),duty:v('duty'),other:v('other')};save();toast('Tariff saved');render()}
 function tariffReset(){ask('Reset tariff values?','All tariff settings go back to the FY 2026-27 starting values (including FPPAS and duty).','Reset',()=>{DB.tariff=TARIFF_DEF();save();toast('Tariff reset');render()},false)}
+
+/* ============ fast start: heavy libraries load after the first screen ============ */
+let _libP=null;
+function libsLoad(){if(_libP)return _libP;const L=[['XLSX','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],['jspdf','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],['autoTable','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js']];
+  const one=u=>new Promise(r=>{const t=document.createElement('script');t.src=u;t.onload=()=>r(1);t.onerror=()=>r(0);document.head.appendChild(t)});
+  _libP=(async()=>{const a=one(L[0][1]),b=one(L[1][1]);await Promise.all([a,b]);await one(L[2][1]);const ok=typeof XLSX!=='undefined'&&!!window.jspdf;if(!ok)_libP=null;return ok})();return _libP}
+function libsNeed(){libsLoad();toast(navigator.onLine===false?'No internet. The Excel / PDF tools could not load.':'Loading the Excel / PDF tools… try again in a few seconds','info')}
+function onChartLoad(){try{if(document.body.classList.contains('locked')||typeof S==='undefined'||!S.view)return;const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))return;S.noCap=true;render()}catch(e){}}
+try{window.addEventListener('load',()=>setTimeout(libsLoad,800))}catch(e){}
+try{if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='ems-updated')toast('A new version was downloaded. Close and reopen the app to use it.','info')})}catch(e){}
 /* ============ render ============ */
 function render(){
   if(S.view==='entry'&&!S.noCap&&document.getElementById('ef_date'))S.ef=efRead();S.noCap=false;
